@@ -4,7 +4,7 @@
 
 #include "accelerometerstart.h"
 #include "delayedtextprinttest.h"
-
+#include "audiotest.h"
 
 #include <QThread>
 #include <QDebug>
@@ -19,18 +19,23 @@ public:
     void run() {
         tst->runTest();
     };
+    QString *testName() {
+        return tst->testName();
+    }
 };
 
 KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
 {
     currentTest = NULL;
     currentTestNumber = -1;
+    currentThread = NULL;
     this->ui = ui;
 }
 
 bool KovanTestEngine::loadAllTests() {
-    tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 2));
+    tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 1));
     tests.append(new AccelerometerStart());
+    tests.append(new AudioTest());
     tests.append(new DelayedTextPrintTest(new QString("Stopping tests..."), 1));
     tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
     return true;
@@ -48,7 +53,23 @@ void KovanTestEngine::updateTestState(int running, int value, QString *message) 
     ui->setStatusText(message);
 
     if (!running)
-        runNextTest();
+        currentThread->terminate();
+}
+
+void KovanTestEngine::cleanupCurrentTest() {
+    if (currentThread)
+        qDebug() << "Finishing up test: " << currentThread->testName()->toUtf8();
+
+    if (currentThread && currentThread->isRunning()) {
+        currentThread->terminate();
+        qDebug() << "Thread was running, telling it to terminate";
+        return;
+    }
+    qDebug() << "Thread was not running.  Moving on to next test.";
+    delete currentThread;
+    currentThread = NULL;
+    runNextTest();
+    return;
 }
 
 bool KovanTestEngine::runNextTest()
@@ -64,8 +85,10 @@ bool KovanTestEngine::runNextTest()
     QObject::connect(currentTest, SIGNAL(testStateUpdated(int,int,QString*)),
                      this, SLOT(updateTestState(int,int,QString*)));
 
-    KovanTestEngineThread *newTestThread = new KovanTestEngineThread(currentTest);
-    newTestThread->start();
+    currentThread = new KovanTestEngineThread(currentTest);
+    QObject::connect(currentThread, SIGNAL(finished()),
+                     this, SLOT(cleanupCurrentTest()));
+    currentThread->start();
 
     ui->setProgressBar(currentTestNumber*1.0/tests.count());
     return true;

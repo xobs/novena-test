@@ -15,12 +15,14 @@ SOURCES += main.cpp\
     kovantest.cpp \
     accelerometerstart.cpp \
     kovantestengine.cpp \
-    delayedtextprinttest.cpp
+    delayedtextprinttest.cpp \
+    audiotest.cpp
 
 HEADERS  += kovantestwindow.h \
     kovantest.h \
     accelerometerstart.h \
     kovantestengine.h \
-    delayedtextprinttest.h
+    delayedtextprinttest.h \
+    audiotest.h
 
 FORMS    += kovantestwindow.ui

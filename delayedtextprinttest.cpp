@@ -16,6 +16,7 @@ DelayedTextPrintTest::DelayedTextPrintTest(QString *message, double delay)
 {
     this->message = message;
     this->duration = delay;
+    name = new QString("Text delay");
 }
 
 void DelayedTextPrintTest::runTest() {

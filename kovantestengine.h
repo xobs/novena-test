@@ -6,6 +6,7 @@
 #include <QVectorIterator>
 #include "kovantest.h"
 class KovanTestWindow;
+class KovanTestEngineThread;
 
 class KovanTestEngine : public QObject
 {
@@ -16,6 +17,7 @@ private:
     KovanTest *currentTest;
     int currentTestNumber;
     KovanTestWindow *ui;
+    KovanTestEngineThread *currentThread;
 
 public:
     KovanTestEngine(KovanTestWindow *ui);
@@ -30,6 +32,7 @@ public slots:
        @param message - An informative message to put up.
     */
     void updateTestState(int running, int value, QString *message);
+    void cleanupCurrentTest(void);
 };
 
 #endif // KOVANTESTENGINE_H

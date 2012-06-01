@@ -6,6 +6,7 @@ KovanTest::KovanTest()
     lastString = NULL;
     lastResult = 0;
     engine = NULL;
+    name = new QString("Base test");
 }
 
 QString *KovanTest::getStatusString()
@@ -23,4 +24,8 @@ void KovanTest::setTestNumber(int number) {
 
 void KovanTest::setEngine(KovanTestEngine *engie) {
     engine = engie;
+}
+
+QString *KovanTest::testName() {
+    return name;
 }

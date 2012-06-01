@@ -16,6 +16,9 @@ private:
     int lastResult;
     KovanTestEngine *engine;
 
+protected:
+    QString *name;
+
 public:
     KovanTest();
     virtual void runTest() = 0;
@@ -29,6 +32,7 @@ public:
 
     /* Tells this test what its position is */
     void setTestNumber(int number);
+    QString *testName();
 
 signals:
     void testStateUpdated(int running, int value, QString *message);

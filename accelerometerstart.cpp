@@ -2,6 +2,7 @@
 
 AccelerometerStart::AccelerometerStart()
 {
+    name = new QString("Accelerometer");
 }
 
 void AccelerometerStart::runTest() {
