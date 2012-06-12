@@ -1,0 +1,87 @@
+Headers to test:
+
+P607 # Digital IO
+P611 # Analogue input
+P602 # Motor control 0, 1, 2, and 3
+P609 # Motor control 4, 5, 6, and 7
+P601 # Servo 0 and 1
+P606 # Servo 2 and 3
+P612 # Ground pins
+P604 # Ground pins
+P605 # VDD pins
+P613 # VDD pins
+
+J101 # Onboard serial
+P608 # External serial
+P703 # Micro-USB
+Wifi
+J800 # HDMI out
+P300 # Speaker
+P901 # Dual-port USB
+J300 # LCD and touchscreen
+
+SW700 # Reset switch
+
+Procedure:
+
+1) Connect cable from J101 to P608 # Serial loopback
+2) Connect cable from P703 to one port on P901 # Micro USB to USB
+3) Attach USB drive to other port on P901 # Other USB port
+4) Plug in test jig
+5) Connect cable from J800 to test jig # HDMI
+6) Connect cable from P300 to test jig # Audio
+7) Connect cable from P602 to left of test jig # Motor
+8) Connect cable from P606 to right of test jig # Motor
+9) Connect LCD panel
+10) Turn on device
+
+
+
+Internal procedure:
+
+0) Begin reading from acceleromter
+
+1) Play a square wave, measure ADC0, ensure it's moving
+
+2) Test servo controllers.  For each servo in 0 1, 2, 3:
+2.1) Move servo X backwards, measure ADC12+X
+2.2) Move servo X forwards, measure ADC12+X
+
+3) Test serial ports:
+3.1) Send data out onboard serial, read in external serial
+3.2) Send data out external serial, read in onboard serial
+
+4) Test digital IOs.  For x in 0, 1, 2, 3:
+4.1) Pull pin x down, measure pin 7-x
+4.2) Pull pin x up, measure pin 7-x
+4.3) Pull pin 7-x down, measure pin x
+4.4) Pull pin 7-x up, measure pin x
+
+5) Check onboard micro USB using subtest module
+
+6) Check if the accelerometer responds to I2C
+
+7) Check WIFI and other USB port
+7.1) Connect to a known access point
+7.2) Download file onto the mounted USB drive
+7.3) Check SHA256 sum to verify its correctness
+
+8) Plug in 7.4V battery
+8.1) Measure battery voltage
+8.2) Unplug power supply
+8.3) Measure battery voltage
+
+9) Check motor drivers.  For each motor x:
+9.1) Spin motor forwards
+9.2) Spin motor backwards, and measure motor ADC
+
+10) Unplug 7.4V battery
+
+11) Test LEDs and switch
+11.1) Turn on every other LED
+11.2) Have operator press button
+11.3) Invert every LED
+11.4) Have operator press button again
+
+12) Test HDMI
+12.1) Ask: Does the image show up on the screen?
