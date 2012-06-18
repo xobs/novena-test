@@ -1,5 +1,9 @@
 #include <QString>
+#include <stdarg.h>
+#include <stdint.h>
 #include "externaltest.h"
+
+static ExternalTest *current = NULL;
 
 struct tests {
         int (*func)(void);
@@ -69,20 +73,64 @@ ExternalTest::ExternalTest(QString *testName)
 {
     unsigned int i;
 
-    name = new QString("ExternalTest");
 
     testNumber = -1;
     for (i=0; i<sizeof(tests)/sizeof(tests[0]); i++) {
         if (testName == QString::fromAscii(tests[i].abbr)) {
             testNumber = i;
+            name = new QString(tests[i].name);
             break;
         }
     }
+    if (!name)
+        name = new QString("External test");
 }
 
 
 void ExternalTest::runTest() {
     qDebug("In ExternalTest::runTest()");
-    emit testStateUpdated(0, 0, 0, new QString("Did run test"));
+    if (testNumber != -1) {
+        emit testStateUpdated(1, 0, 0, name);
+        if (tests[testNumber].func())
+            emit testStateUpdated(0, 1, 0, name);
+        else
+            emit testStateUpdated(0, 0, 0, name);
+    }
+    else
+        emit testStateUpdated(0, 1, 0, name);
     return;
+}
+
+
+void ExternalTest::harnessBridge(int level, int code, char *fmt, va_list ap) {
+    QString *tmp = new QString();
+    tmp->vsprintf(fmt, ap);
+    emit testStateUpdated(1, level, code, new QString("Did run test"));
+    delete tmp;
+}
+
+
+
+void harness_error(uint32_t code, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    if (current)
+        current->harnessBridge(1, code, fmt, ap);
+    va_end(ap);
+}
+
+void harness_info(uint32_t code, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    if (current)
+        current->harnessBridge(0, code, fmt, ap);
+    va_end(ap);
+}
+
+void harness_debug(uint32_t code, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    if (current)
+        current->harnessBridge(2, code, fmt, ap);
+    va_end(ap);
 }
