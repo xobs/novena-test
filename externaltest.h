@@ -3,10 +3,11 @@
 
 #include "kovantest.h"
 
-class AccelerometerStart : public KovanTest
+class ExternalTest : public KovanTest
 {
+    int testNumber;
 public:
-    AccelerometerStart();
+    ExternalTest(QString *testName);
     void runTest();
 };
 
