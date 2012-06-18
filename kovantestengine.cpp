@@ -2,9 +2,8 @@
 #include "kovantest.h"
 #include "kovantestwindow.h"
 
-#include "accelerometerstart.h"
+#include "externaltest.h"
 #include "delayedtextprinttest.h"
-#include "audiotest.h"
 
 #include <QThread>
 #include <QDebug>
@@ -32,10 +31,18 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
     this->ui = ui;
 }
 
+
+
 bool KovanTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 1));
-    tests.append(new AccelerometerStart());
-    tests.append(new AudioTest());
+    tests.append(new ExternalTest(new QString("test-accel-start")));
+    tests.append(new ExternalTest(new QString("test-audio")));
+    tests.append(new ExternalTest(new QString("test-serial")));
+    tests.append(new ExternalTest(new QString("test-servo")));
+    tests.append(new ExternalTest(new QString("test-io")));
+    tests.append(new ExternalTest(new QString("test-usb")));
+    tests.append(new ExternalTest(new QString("test-accel-finish")));
+    tests.append(new ExternalTest(new QString("test-wifi")));
     tests.append(new DelayedTextPrintTest(new QString("Stopping tests..."), 1));
     tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
     return true;
@@ -47,7 +54,7 @@ bool KovanTestEngine::runAllTests() {
     return runNextTest();
 }
 
-void KovanTestEngine::updateTestState(int running, int value, QString *message) {
+void KovanTestEngine::updateTestState(int running, int level, int value, QString *message) {
     qDebug() << "In KovanTestEngine::updateTestState(" << running << ", " << value << ", " << message->toUtf8() << ")";
 
     ui->setStatusText(message);

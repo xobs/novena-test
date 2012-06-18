@@ -35,7 +35,7 @@ public:
     QString *testName();
 
 signals:
-    void testStateUpdated(int running, int value, QString *message);
+    void testStateUpdated(int running, int level, int value, QString *message);
 };
 
 #endif // KOVANTEST_H

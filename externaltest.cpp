@@ -83,6 +83,6 @@ ExternalTest::ExternalTest(QString *testName)
 
 void ExternalTest::runTest() {
     qDebug("In ExternalTest::runTest()");
-    emit testStateUpdated(0, 0, new QString("Did run test"));
+    emit testStateUpdated(0, 0, 0, new QString("Did run test"));
     return;
 }

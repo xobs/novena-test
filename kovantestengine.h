@@ -31,7 +31,7 @@ public slots:
        @param value - An error code.  0 for success.
        @param message - An informative message to put up.
     */
-    void updateTestState(int running, int value, QString *message);
+    void updateTestState(int running, int level, int value, QString *message);
     void cleanupCurrentTest(void);
 };
 

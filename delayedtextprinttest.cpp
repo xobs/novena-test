@@ -20,7 +20,7 @@ DelayedTextPrintTest::DelayedTextPrintTest(QString *message, double delay)
 }
 
 void DelayedTextPrintTest::runTest() {
-    emit testStateUpdated(1, 0, message);
+    emit testStateUpdated(1, 0, 0, message);
     SleeperThread::msleep(duration*1000);
-    emit testStateUpdated(0, 0, message);
+    emit testStateUpdated(0, 0, 0, message);
 }
