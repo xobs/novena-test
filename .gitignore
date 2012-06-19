@@ -1,0 +1,5 @@
+*.o
+*.swp
+Makefile
+moc*
+ui_*.h
