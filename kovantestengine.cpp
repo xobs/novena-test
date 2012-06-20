@@ -8,6 +8,7 @@
 #include "batterytest.h"
 #include "motortest.h"
 #include "switchtest.h"
+#include "hdmitest.h"
 
 #include <QThread>
 #include <QDebug>
@@ -39,6 +40,7 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
 
 bool KovanTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 1));
+    tests.append(new HDMITest());
     tests.append(new WifiTest());
     tests.append(new ExternalTest(new QString("test-accel-start")));
     tests.append(new ExternalTest(new QString("test-audio")));
@@ -50,7 +52,6 @@ bool KovanTestEngine::loadAllTests() {
     tests.append(new BatteryTestStart());
     tests.append(new MotorTest());
     tests.append(new BatteryTestStop());
-    tests.append(new SwitchTest());
     tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
     return true;
 }
