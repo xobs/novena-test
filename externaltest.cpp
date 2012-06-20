@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include "externaltest.h"
+#include "harness.h"
 
 static ExternalTest *current = NULL;
 
@@ -20,7 +21,6 @@ extern "C" {
     extern int test_serial(void);
     extern int test_accel_start(void);
     extern int test_accel_finish(void);
-    extern int test_wifi(void);
 }
 
 
@@ -61,11 +61,6 @@ static struct tests tests[] = {
                 "Read accelerometer result",
                 "test-accel-finish",
         },
-        { // 7  
-                test_wifi,
-                "Wifi and other USB port",
-                "test-wifi",
-        },
 };
 
 
@@ -92,7 +87,7 @@ void ExternalTest::runTest() {
     if (testNumber != -1) {
         emit testStateUpdated(1, 0, 0, name);
         if (tests[testNumber].func())
-            emit testStateUpdated(0, 1, 0, name);
+            emit testStateUpdated(0, 1, 1, name);
         else
             emit testStateUpdated(0, 0, 0, name);
     }
