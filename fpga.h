@@ -8,4 +8,5 @@ uint8_t get_fpga(uint8_t reg);
 int sync_fpga(void);
 
 uint32_t read_adc(uint32_t channel);
+uint32_t read_battery(void);
 #endif /* __I2C_H__ */

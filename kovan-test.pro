@@ -23,7 +23,7 @@ SOURCES += main.cpp\
     test-serial.c \
     test-servo.c \
     test-usb.c \
-    fpga.c \
+    fpga.c gpio.c \
     wifitest.cpp
 
 

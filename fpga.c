@@ -6,15 +6,22 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "gpio.h"
+
+
 #define DIG_SCAN 0x45
 
 #define ADC_SAMPLE 0x46
 #define ADC_VAL 0x81
 
+/* This GPIO needs to go high to measure battery voltage */
+#define ADC8_GPIO 79
+
 
 static int i2c_fd;
 static char *i2c_device = "/dev/i2c-0";
 static uint8_t fpga_addr = 0x1e;
+
 
 #ifdef linux
 #include <linux/i2c.h>
@@ -148,9 +155,29 @@ int sync_fpga(void) {
 uint32_t read_adc(uint32_t channel) {
         uint16_t result;
 
+	if (channel == 8) {
+		gpio_export(ADC8_GPIO);
+		gpio_set_direction(ADC8_GPIO, 1);
+		gpio_set_value(ADC8_GPIO, 0);
+	}
         set_fpga(ADC_SAMPLE, channel);
         set_fpga(ADC_SAMPLE, channel | 0x10);
         set_fpga(ADC_SAMPLE, channel);
         read_fpga(ADC_VAL, &result, sizeof(result));
         return result;
+}
+
+uint32_t read_battery(void) {
+        uint16_t result;
+	uint32_t channel = 8;
+
+	gpio_export(ADC8_GPIO);
+	gpio_set_direction(ADC8_GPIO, 1);
+	gpio_set_value(ADC8_GPIO, 1);
+
+        set_fpga(ADC_SAMPLE, channel);
+        set_fpga(ADC_SAMPLE, channel | 0x10);
+        set_fpga(ADC_SAMPLE, channel);
+        read_fpga(ADC_VAL, &result, sizeof(result));
+        return (result*4.086*3.3/1024)*1000;
 }
