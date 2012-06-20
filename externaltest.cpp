@@ -84,14 +84,9 @@ ExternalTest::ExternalTest(QString *testName)
 
 void ExternalTest::runTest() {
     if (testNumber != -1) {
-        emit testStateUpdated(1, 0, 0, name);
-        if (tests[testNumber].func())
-            emit testStateUpdated(0, 1, 1, name);
-        else
-            emit testStateUpdated(0, 0, 0, name);
+        current = this;
+        tests[testNumber].func();
     }
-    else
-        emit testStateUpdated(0, 1, 0, name);
     return;
 }
 
@@ -99,8 +94,7 @@ void ExternalTest::runTest() {
 void ExternalTest::harnessBridge(int level, int code, char *fmt, va_list ap) {
     QString *tmp = new QString();
     tmp->vsprintf(fmt, ap);
-    emit testStateUpdated(1, level, code, new QString("Did run test"));
-    delete tmp;
+    emit testStateUpdated(1, level, code, tmp);
 }
 
 

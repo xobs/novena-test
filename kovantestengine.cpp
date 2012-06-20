@@ -69,6 +69,8 @@ void KovanTestEngine::updateTestState(int running, int level, int value, QString
     str.append(": ");
     str.append(message);
     ui->addTestLog(str);
+
+    delete message;
 }
 
 
