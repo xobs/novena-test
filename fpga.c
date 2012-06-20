@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include "gpio.h"
-#include "harness.h"
 
 
 #define DIG_SCAN 0x45
@@ -176,7 +175,7 @@ static uint32_t read_adc_internal(uint32_t channel, uint8_t is_battery) {
 
 uint32_t read_battery(void) {
 	read_adc_internal(8, 1);
-	return read_adc_internal(8, 1);
+	return (read_adc_internal(8, 1))*4.086*3.3/1024*1000;
 }
 
 uint32_t read_adc(uint32_t channel) {
