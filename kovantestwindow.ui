@@ -46,6 +46,9 @@
      </widget>
     </item>
     <item>
+     <widget class="QPlainTextEdit" name="testLog"/>
+    </item>
+    <item>
      <spacer name="verticalSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>

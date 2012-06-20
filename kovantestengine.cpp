@@ -55,9 +55,20 @@ bool KovanTestEngine::runAllTests() {
     return runNextTest();
 }
 
+static const char *levelStr[] = {
+    "<font color=\"blue\">INFO</font>",
+    "<font color=\"red\">ERROR</font>",
+    "<font color=\"green\">DEBUG</font>",
+};
 
 void KovanTestEngine::updateTestState(int running, int level, int value, QString *message) {
-    ui->setStatusText(message);
+    QString str;
+
+    str.append("<p>");
+    str.append(levelStr[level]);
+    str.append(": ");
+    str.append(message);
+    ui->addTestLog(str);
 }
 
 
@@ -87,6 +98,10 @@ bool KovanTestEngine::runNextTest()
                      this, SLOT(cleanupCurrentTest()));
     currentThread->start();
 
+    ui->setStatusText(currentTest->testName());
     ui->setProgressBar(currentTestNumber*1.0/tests.count());
+    QString progressText;
+    progressText.sprintf("Progress: %d/%d", currentTestNumber, tests.count()-1);
+    ui->setProgressText(progressText);
     return true;
 }

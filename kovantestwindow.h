@@ -17,7 +17,8 @@ public:
     ~KovanTestWindow();
     void setStatusText(QString *message);
     void setProgressBar(double progress);
-    
+    void setProgressText(QString &text);
+    void addTestLog(QString &message);
 private:
     Ui::KovanTestWindow *ui;
     KovanTestEngine *engine;
