@@ -111,6 +111,6 @@ int test_audio(void) {
 }
 #else
 int test_audio(void) {
-    return 0;
+	return 0;
 }
 #endif //linux
