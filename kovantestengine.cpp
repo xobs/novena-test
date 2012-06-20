@@ -5,6 +5,8 @@
 #include "externaltest.h"
 #include "delayedtextprinttest.h"
 #include "wifitest.h"
+#include "batterytest.h"
+#include "motortest.h"
 
 #include <QThread>
 #include <QDebug>
@@ -44,7 +46,8 @@ bool KovanTestEngine::loadAllTests() {
     tests.append(new ExternalTest(new QString("test-io")));
     tests.append(new ExternalTest(new QString("test-usb")));
     tests.append(new ExternalTest(new QString("test-accel-finish")));
-    tests.append(new DelayedTextPrintTest(new QString("Stopping tests..."), 1));
+    tests.append(new BatteryTestStart());
+    tests.append(new MotorTest());
     tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
     return true;
 }
@@ -61,7 +64,7 @@ static const char *levelStr[] = {
     "<font color=\"green\">DEBUG</font>",
 };
 
-void KovanTestEngine::updateTestState(int running, int level, int value, QString *message) {
+void KovanTestEngine::updateTestState(int level, int value, QString *message) {
     QString str;
 
     str.append("<p>");
@@ -69,6 +72,15 @@ void KovanTestEngine::updateTestState(int running, int level, int value, QString
     str.append(": ");
     str.append(message);
     ui->addTestLog(str);
+
+    if (level == TEST_INFO)
+        qDebug() << "INFO:" << level << value << message->toAscii();
+    else if (level == TEST_ERROR)
+        qDebug() << "ERROR:" << level << value << message->toAscii();
+    else if (level == TEST_DEBUG)
+        qDebug() << "DEBUG:" << level << value << message->toAscii();
+    else
+        qDebug() << "????:" << level << value << message->toAscii();
 
     delete message;
 }
@@ -92,8 +104,8 @@ bool KovanTestEngine::runNextTest()
 
     currentTest = tests[currentTestNumber];
 
-    QObject::connect(currentTest, SIGNAL(testStateUpdated(int,int,int,QString*)),
-                     this, SLOT(updateTestState(int,int,int,QString*)));
+    QObject::connect(currentTest, SIGNAL(testStateUpdated(int,int,QString*)),
+                     this, SLOT(updateTestState(int,int,QString*)));
 
     currentThread = new KovanTestEngineThread(currentTest);
     QObject::connect(currentThread, SIGNAL(finished()),
