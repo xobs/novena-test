@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <alsa/asoundlib.h>
 
 #include "harness.h"
 #include "fpga.h"
@@ -11,6 +10,8 @@
 uint32_t adc_min[] = {430, 350, 250, 150};
 uint32_t adc_max[] = {550, 480, 325, 200};
 
+#ifdef linux
+#include <alsa/asoundlib.h>
 // 44100 = 440 * 100 = 220 * 200 (200 samples high, 200 samples low)
 int test_audio(void) {
 	int i;
@@ -108,3 +109,8 @@ int test_audio(void) {
 	snd_pcm_close(pcm);
 	return 0;
 }
+#else
+int test_audio(void) {
+    return 0;
+}
+#endif //linux
