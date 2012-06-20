@@ -26,6 +26,7 @@ SOURCES += main.cpp\
     test-servo.c \
     test-usb.c \
     batterytest.cpp \
+    hdmitest.cpp \
     fpga.c gpio.c \
     wifitest.cpp
 
@@ -46,6 +47,7 @@ HEADERS  += kovantestwindow.h \
     audiotest.h \
     motortest.h \
     switchtest.h \
+    hdmitest.h \
     wifitest.h
 
 FORMS    += kovantestwindow.ui
