@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "gpio.h"
+#include "harness.h"
 
 
 #define DIG_SCAN 0x45
@@ -152,32 +153,33 @@ int sync_fpga(void) {
 	return 0;
 }
 
-uint32_t read_adc(uint32_t channel) {
+static uint32_t read_adc_internal(uint32_t channel, uint8_t is_battery) {
         uint16_t result;
+	int t, i;
 
 	if (channel == 8) {
 		gpio_export(ADC8_GPIO);
 		gpio_set_direction(ADC8_GPIO, 1);
-		gpio_set_value(ADC8_GPIO, 0);
+		gpio_set_value(ADC8_GPIO, is_battery);
 	}
         set_fpga(ADC_SAMPLE, channel);
         set_fpga(ADC_SAMPLE, channel | 0x10);
         set_fpga(ADC_SAMPLE, channel);
+
+	/* Wait for ADC to go ready */
+	for (t=0, i=0; !(t&1) && i<100; t=get_fpga(0x83), i++)
+		usleep(1000);
+
         read_fpga(ADC_VAL, &result, sizeof(result));
         return result;
 }
 
 uint32_t read_battery(void) {
-        uint16_t result;
-	uint32_t channel = 8;
+	read_adc_internal(8, 1);
+	return read_adc_internal(8, 1);
+}
 
-	gpio_export(ADC8_GPIO);
-	gpio_set_direction(ADC8_GPIO, 1);
-	gpio_set_value(ADC8_GPIO, 1);
-
-        set_fpga(ADC_SAMPLE, channel);
-        set_fpga(ADC_SAMPLE, channel | 0x10);
-        set_fpga(ADC_SAMPLE, channel);
-        read_fpga(ADC_VAL, &result, sizeof(result));
-        return (result*4.086*3.3/1024)*1000;
+uint32_t read_adc(uint32_t channel) {
+	read_adc_internal(channel, 0);
+	return read_adc_internal(channel, 0);
 }
