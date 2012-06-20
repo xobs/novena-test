@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
-#include <linux/i2c.h>
-#include <linux/i2c-dev.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -18,6 +16,9 @@ static int i2c_fd;
 static char *i2c_device = "/dev/i2c-0";
 static uint8_t fpga_addr = 0x1e;
 
+#ifdef linux
+#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
 int write_fpga(uint8_t start_reg, void *buffer, uint32_t bytes)
 {
 	uint8_t data[bytes+1];
@@ -86,6 +87,19 @@ int read_fpga(uint8_t start_reg, void *buffer, int bytes)
 
 	return 0;
 }
+
+#else
+
+int write_fpga(uint8_t start_reg, void *buffer, uint32_t bytes) {
+    return 0;
+}
+
+int read_fpga(uint8_t start_reg, void *buffer, int bytes) {
+    bzero(buffer, bytes);
+    return 0;
+}
+
+#endif //linux
 
 int set_fpga(uint8_t reg, uint8_t val) {
 	return write_fpga(reg, &val, sizeof(val));
