@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network
 
 TARGET = kovan-test
 TEMPLATE = app
@@ -23,12 +23,10 @@ SOURCES += main.cpp\
     test-serial.c \
     test-servo.c \
     test-usb.c \
-    test-wifi.c \
     fpga.c \
-    harness.c
-
-CONFIG += link_pkgconfig
-PKGCONFIG += alsa libcurl
+    wifitest.cpp
+#CONFIG += link_pkgconfig
+#PKGCONFIG += alsa
 
 
 
@@ -37,6 +35,7 @@ HEADERS  += kovantestwindow.h \
     externaltest.h \
     kovantestengine.h \
     delayedtextprinttest.h \
-    audiotest.h
+    audiotest.h \
+    wifitest.h
 
 FORMS    += kovantestwindow.ui
