@@ -78,8 +78,8 @@ int test_servo(void) {
 		usleep(200000);
 		val = read_adc(adc);
 
-        if (val < 130 || val > 170) {
-			harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 130 and 180, read as %d", pwm, adc, val);
+        if (val < 120 || val > 170) {
+            harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 120 and 180, read as %d", pwm, adc, val);
             errors++;
         }
 		else
