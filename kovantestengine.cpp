@@ -4,6 +4,7 @@
 
 #include "externaltest.h"
 #include "delayedtextprinttest.h"
+#include "wifitest.h"
 
 #include <QThread>
 #include <QDebug>
@@ -35,6 +36,7 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
 
 bool KovanTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 1));
+    tests.append(new WifiTest());
     tests.append(new ExternalTest(new QString("test-accel-start")));
     tests.append(new ExternalTest(new QString("test-audio")));
     tests.append(new ExternalTest(new QString("test-serial")));
@@ -42,7 +44,6 @@ bool KovanTestEngine::loadAllTests() {
     tests.append(new ExternalTest(new QString("test-io")));
     tests.append(new ExternalTest(new QString("test-usb")));
     tests.append(new ExternalTest(new QString("test-accel-finish")));
-    tests.append(new ExternalTest(new QString("test-wifi")));
     tests.append(new DelayedTextPrintTest(new QString("Stopping tests..."), 1));
     tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
     return true;
@@ -54,8 +55,9 @@ bool KovanTestEngine::runAllTests() {
     return runNextTest();
 }
 
+
 void KovanTestEngine::updateTestState(int running, int level, int value, QString *message) {
-    qDebug() << "In KovanTestEngine::updateTestState(" << running << ", " << value << ", " << message->toUtf8() << ")";
+    qDebug() << "In KovanTestEngine::updateTestState(" << running << ", " << level << ", " << value << ", " << message->toUtf8() << ")";
 
     ui->setStatusText(message);
 
@@ -89,8 +91,8 @@ bool KovanTestEngine::runNextTest()
 
     currentTest = tests[currentTestNumber];
 
-    QObject::connect(currentTest, SIGNAL(testStateUpdated(int,int,QString*)),
-                     this, SLOT(updateTestState(int,int,QString*)));
+    QObject::connect(currentTest, SIGNAL(testStateUpdated(int,int,int,QString*)),
+                     this, SLOT(updateTestState(int,int,int,QString*)));
 
     currentThread = new KovanTestEngineThread(currentTest);
     QObject::connect(currentThread, SIGNAL(finished()),
