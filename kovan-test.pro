@@ -25,8 +25,12 @@ SOURCES += main.cpp\
     test-usb.c \
     fpga.c \
     wifitest.cpp
-#CONFIG += link_pkgconfig
-#PKGCONFIG += alsa
+
+
+linux-g++ {
+    CONFIG += link_pkgconfig
+    PKGCONFIG += alsa
+}
 
 
 
