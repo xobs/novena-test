@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
-#include <linux/i2c.h>
 #include <stdint.h>
 #include <unistd.h>
 #include "fpga.h"
@@ -54,6 +53,7 @@ static void set_pwm_degrees(uint32_t pwm, uint32_t deg) {
 int test_servo(void) {
 	uint32_t val;
 	int i;
+    int errors = 0;
 	set_pwm_period(PWM_PERIOD);
 
 	for (i=0; i<4; i++) {
@@ -65,8 +65,10 @@ int test_servo(void) {
 		usleep(200000);
 		val = read_adc(adc);
 
-		if (val < 50 || val > 110)
+        if (val < 50 || val > 110) {
+            errors++;
 			harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 50 and 110, read as %d", pwm, adc, val);
+        }
 		else
 			harness_info(pwm+1, "PWM %d, ADC %d, value nominal at %d", pwm, adc, val);
 
@@ -76,11 +78,13 @@ int test_servo(void) {
 		usleep(200000);
 		val = read_adc(adc);
 
-		if (val < 130 || val > 170)
+        if (val < 130 || val > 170) {
 			harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 130 and 180, read as %d", pwm, adc, val);
+            errors++;
+        }
 		else
 			harness_info(pwm+1, "PWM %d, ADC %d, value nominal at %d", pwm, adc, val);
 	}
 
-	return 0;
+    return errors;
 }
