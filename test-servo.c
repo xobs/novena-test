@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
+#include <linux/i2c.h>
 #include <stdint.h>
 #include <unistd.h>
 #include "fpga.h"
@@ -53,7 +54,6 @@ static void set_pwm_degrees(uint32_t pwm, uint32_t deg) {
 int test_servo(void) {
 	uint32_t val;
 	int i;
-    int errors = 0;
 	set_pwm_period(PWM_PERIOD);
 
 	for (i=0; i<4; i++) {
@@ -62,29 +62,21 @@ int test_servo(void) {
 
 		set_pwm_degrees(pwm, 0);
 		val = read_adc(adc);
-		usleep(200000);
-		val = read_adc(adc);
 
-        if (val < 50 || val > 110) {
-            errors++;
+		if (val < 50 || val > 110)
 			harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 50 and 110, read as %d", pwm, adc, val);
-        }
 		else
 			harness_info(pwm+1, "PWM %d, ADC %d, value nominal at %d", pwm, adc, val);
 
 
 		set_pwm_degrees(pwm, 360);
 		val = read_adc(adc);
-		usleep(200000);
-		val = read_adc(adc);
 
-        if (val < 120 || val > 170) {
-            harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 120 and 180, read as %d", pwm, adc, val);
-            errors++;
-        }
+		if (val < 120 || val > 170)
+			harness_error(pwm+1, "PWM %d, ADC %d, value expected to be between 120 and 180, read as %d", pwm, adc, val);
 		else
 			harness_info(pwm+1, "PWM %d, ADC %d, value nominal at %d", pwm, adc, val);
 	}
 
-    return errors;
+	return 0;
 }
