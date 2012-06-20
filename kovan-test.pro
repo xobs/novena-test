@@ -17,12 +17,14 @@ SOURCES += main.cpp\
     kovantestengine.cpp \
     delayedtextprinttest.cpp \
     audiotest.cpp \
+    motortest.cpp \
     test-accel.c \
     test-audio.c \
     test-io.c \
     test-serial.c \
     test-servo.c \
     test-usb.c \
+    batterytest.cpp \
     fpga.c gpio.c \
     wifitest.cpp
 
@@ -39,7 +41,9 @@ HEADERS  += kovantestwindow.h \
     externaltest.h \
     kovantestengine.h \
     delayedtextprinttest.h \
+    batterytest.h \
     audiotest.h \
+    motortest.h \
     wifitest.h
 
 FORMS    += kovantestwindow.ui
