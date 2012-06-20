@@ -56,7 +56,7 @@ static int i2c_get(uint8_t i2c_addr, uint8_t reg_addr, char *bfr, int sz) {
 }
 #else
 static int i2c_get(uint8_t i2c_addr, uint8_t reg_addr, char *bfr, int sz) {
-    return 0;
+	return 0;
 }
 #endif //linux
 
