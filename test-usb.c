@@ -7,13 +7,14 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sys/ioctl.h>
-#include <linux/usbdevice_fs.h>
 
 #include <sys/utsname.h>
-#include <syscall.h>
 
 #include "harness.h"
 
+#ifdef linux
+#include <linux/usbdevice_fs.h>
+#include <syscall.h>
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define delete_module(mod) syscall(__NR_delete_module, mod)
 
@@ -221,3 +222,8 @@ int test_usb(void) {
 out:
 	return ret;
 }
+#else
+int test_usb(void) {
+    return 0;
+}
+#endif //linux
