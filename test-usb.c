@@ -179,6 +179,8 @@ static int my_init_module(char *modname) {
 	close(fd);
 
 	ret = init_module(dat, sizeof(dat), "");
+	if (ret && errno == EEXIST)
+		ret = errno = 0;
 	if (ret)
 		harness_error(3, "Couldn't insert %s module: %s", modname, strerror(errno));
 
@@ -224,6 +226,6 @@ out:
 }
 #else
 int test_usb(void) {
-    return 0;
+	return 0;
 }
 #endif //linux
