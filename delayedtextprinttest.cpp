@@ -20,6 +20,6 @@ DelayedTextPrintTest::DelayedTextPrintTest(QString *message, double delay)
 }
 
 void DelayedTextPrintTest::runTest() {
-    emit testStateUpdated(1, 0, 0, new QString(*message));
+    emit testStateUpdated(0, 0, new QString(*message));
     SleeperThread::msleep(duration*1000);
 }
