@@ -17,10 +17,7 @@ public:
     }
 
     void run() {
-        qDebug() << "Running new test in thread ID" << QThread::currentThreadId();
         tst->runTest();
-        qDebug() << "Ended test, but left it hanging.";
-        exit();
     };
     QString *testName() {
         return tst->testName();
@@ -60,23 +57,12 @@ bool KovanTestEngine::runAllTests() {
 
 
 void KovanTestEngine::updateTestState(int running, int level, int value, QString *message) {
-    qDebug() << "In KovanTestEngine::updateTestState(" << running << ", " << level << ", " << value << ", " << message->toUtf8() << ")";
-    qDebug() << "Updated test state in thread ID" << QThread::currentThreadId();
-
     ui->setStatusText(message);
 }
 
 
 
 void KovanTestEngine::cleanupCurrentTest() {
-    if (currentThread)
-        qDebug() << "Finishing up test: " << currentThread->testName()->toUtf8();
-
-    if (currentThread && currentThread->isRunning())
-        qDebug() << "Thread was running, telling it to terminate";
-    else
-        qDebug() << "Thread was not running.  Moving on to next test.";
-
     delete currentThread;
     currentThread = NULL;
     runNextTest();
