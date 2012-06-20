@@ -13,7 +13,7 @@
 
 int test_io(void) {
 	uint8_t val;
-    int errors = 0;
+	int errors = 0;
 
 	set_fpga(DIG_PU, 0);
 	set_fpga(DIG_OV, 0);
@@ -39,12 +39,12 @@ int test_io(void) {
 	set_fpga(DIG_OV, 0);
 	sync_fpga();
 	val = get_fpga(DIG_VALS);
-    if (val != 0x00) {
+	if (val != 0x00) {
 		harness_error(1,
 			"Lower-nybble test - Expected 0x00, got 0x%02x",
 			val);
-        errors++;
-    }
+		errors++;
+	}
 	else
 		harness_info(1, "Lower-nybble test correct: 0x00");
 
@@ -53,12 +53,12 @@ int test_io(void) {
 	set_fpga(DIG_OV, 0x0f);
 	sync_fpga();
 	val = get_fpga(DIG_VALS);
-    if (val != 0xff) {
+	if (val != 0xff) {
 		harness_error(2,
 			"Lower-nybble test - Expected 0xff, got 0x%02x",
 			val);
-        errors++;
-    }
+		errors++;
+	}
 	else
 		harness_info(2, "Lower-nybble test correct: 0xff");
 
@@ -73,12 +73,12 @@ int test_io(void) {
 	set_fpga(DIG_OV, 0);
 	sync_fpga();
 	val = get_fpga(DIG_VALS);
-    if (val != 0x00) {
+	if (val != 0x00) {
 		harness_error(3,
 			"Upper-nybble test - Expected 0x00, got 0x%02x",
 			val);
-        errors++;
-    }
+		errors++;
+	}
 	else
 		harness_info(3, "Upper-nybble test correct: 0x00");
 
@@ -87,14 +87,14 @@ int test_io(void) {
 	set_fpga(DIG_OV, 0xf0);
 	sync_fpga();
 	val = get_fpga(DIG_VALS);
-    if (val != 0xff) {
+	if (val != 0xff) {
 		harness_error(4,
 			"Upper-nybble test - Expected 0xff, got 0x%02x",
 			val);
-        errors++;
-    }
+		errors++;
+	}
 	else
 		harness_info(4, "Upper-nybble test correct: 0xff");
 
-    return errors;
+	return errors;
 }
