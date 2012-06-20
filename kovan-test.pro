@@ -27,7 +27,7 @@ SOURCES += main.cpp\
     wifitest.cpp
 
 
-linux-g++ {
+linux-gnueabi-oe-g++ {
     CONFIG += link_pkgconfig
     PKGCONFIG += alsa
 }
