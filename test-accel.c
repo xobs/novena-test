@@ -1,5 +1,3 @@
-#include <linux/i2c.h>
-#include <linux/i2c-dev.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <string.h>
@@ -7,6 +5,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include "harness.h"
+
 
 #define ACCEL_ADDR 0x1d
 #define FAILURE_COUNT 10
@@ -23,6 +22,9 @@ static int should_quit;
 static int is_running = THR_STOPPED;
 
 
+#ifdef linux
+#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
 static int i2c_get(uint8_t i2c_addr, uint8_t reg_addr, char *bfr, int sz) {
 	struct i2c_rdwr_ioctl_data packets;
 	struct i2c_msg messages[2];
@@ -52,6 +54,12 @@ static int i2c_get(uint8_t i2c_addr, uint8_t reg_addr, char *bfr, int sz) {
 	
 	return ioctl(fd, I2C_RDWR, &packets) < 0;
 }
+#else
+static int i2c_get(uint8_t i2c_addr, uint8_t reg_addr, char *bfr, int sz) {
+    return 0;
+}
+#endif //linux
+
 
 static void *i2c_background(void *_ignored) {
 	int failures_in_a_row = 0;
