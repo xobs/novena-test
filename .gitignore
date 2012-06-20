@@ -3,3 +3,4 @@
 Makefile
 moc*
 ui_*.h
+kovan-test
