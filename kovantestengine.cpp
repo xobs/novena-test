@@ -7,6 +7,7 @@
 #include "wifitest.h"
 #include "batterytest.h"
 #include "motortest.h"
+#include "switchtest.h"
 
 #include <QThread>
 #include <QDebug>
@@ -48,6 +49,8 @@ bool KovanTestEngine::loadAllTests() {
     tests.append(new ExternalTest(new QString("test-accel-finish")));
     tests.append(new BatteryTestStart());
     tests.append(new MotorTest());
+    tests.append(new BatteryTestStop());
+    tests.append(new SwitchTest());
     tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
     return true;
 }

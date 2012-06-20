@@ -18,6 +18,7 @@ SOURCES += main.cpp\
     delayedtextprinttest.cpp \
     audiotest.cpp \
     motortest.cpp \
+    switchtest.cpp \
     test-accel.c \
     test-audio.c \
     test-io.c \
@@ -44,6 +45,7 @@ HEADERS  += kovantestwindow.h \
     batterytest.h \
     audiotest.h \
     motortest.h \
+    switchtest.h \
     wifitest.h
 
 FORMS    += kovantestwindow.ui
