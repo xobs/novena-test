@@ -83,7 +83,6 @@ ExternalTest::ExternalTest(QString *testName)
 
 
 void ExternalTest::runTest() {
-    qDebug("In ExternalTest::runTest()");
     if (testNumber != -1) {
         emit testStateUpdated(1, 0, 0, name);
         if (tests[testNumber].func())
