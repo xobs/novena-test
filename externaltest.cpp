@@ -94,7 +94,7 @@ void ExternalTest::runTest() {
 void ExternalTest::harnessBridge(int level, int code, char *fmt, va_list ap) {
     QString *tmp = new QString();
     tmp->vsprintf(fmt, ap);
-    emit testStateUpdated(1, level, code, tmp);
+    emit testStateUpdated(level, code, tmp);
 }
 
 
@@ -103,7 +103,7 @@ void harness_error(uint32_t code, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     if (current)
-        current->harnessBridge(1, code, fmt, ap);
+        current->harnessBridge(TEST_ERROR, code, fmt, ap);
     va_end(ap);
 }
 
@@ -111,7 +111,7 @@ void harness_info(uint32_t code, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     if (current)
-        current->harnessBridge(0, code, fmt, ap);
+        current->harnessBridge(TEST_INFO, code, fmt, ap);
     va_end(ap);
 }
 
@@ -119,6 +119,6 @@ void harness_debug(uint32_t code, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     if (current)
-        current->harnessBridge(2, code, fmt, ap);
+        current->harnessBridge(TEST_DEBUG, code, fmt, ap);
     va_end(ap);
 }
