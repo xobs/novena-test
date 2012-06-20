@@ -7,6 +7,7 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
     ui(new Ui::KovanTestWindow)
 {
     ui->setupUi(this);
+    showFullScreen();
     engine = new KovanTestEngine(this);
     engine->loadAllTests();
     engine->runAllTests();
