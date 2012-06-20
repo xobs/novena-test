@@ -27,11 +27,12 @@ public:
     bool runNextTest();
 
 public slots:
-    /* @param running - Determines whether the test is still running (0 if it's done)
+    /* 
+       @param level - 0 == info, 1 == error, 2 == debug
        @param value - An error code.  0 for success.
        @param message - An informative message to put up.
     */
-    void updateTestState(int running, int level, int value, QString *message);
+    void updateTestState(int level, int value, QString *message);
     void cleanupCurrentTest(void);
 };
 
