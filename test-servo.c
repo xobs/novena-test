@@ -60,6 +60,7 @@ int test_servo(void) {
 		int adc = i+12;
 
 		set_pwm_degrees(pwm, 0);
+		usleep(200000);
 		val = read_adc(adc);
 
 		if (val < 50 || val > 110)
@@ -69,6 +70,7 @@ int test_servo(void) {
 
 
 		set_pwm_degrees(pwm, 360);
+		usleep(200000);
 		val = read_adc(adc);
 
 		if (val < 120 || val > 170)
