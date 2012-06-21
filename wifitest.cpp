@@ -24,6 +24,15 @@ void WifiTest::replyFinished(QNetworkReply *reply)
     finished = true;
 }
 
+void WifiTest::gotError(QNetworkReply::NetworkError code)
+{
+    QString *str = new QString("Encountered network error: ");
+    str->append(reply->errorString());
+    emit testStateUpdated(TEST_ERROR, 0, str);
+    error = true;
+    finished = true;
+}
+
 void WifiTest::downloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 {
 }
@@ -34,6 +43,7 @@ void WifiTest::readyRead(void)
     reply->read(data, sizeof(data));
     hash->addData(data, sizeof(data));
     file->write(data, sizeof(data));
+    fileSize += sizeof(data);
 }
 
 
@@ -41,6 +51,7 @@ void WifiTest::openUsbDrive()
 {
     bool found = false;
     QString mountPoint;
+    fileSize = 0;
     // Look through /proc/mounts for something containing "sda"
 
     while (!found) {
@@ -71,6 +82,8 @@ void WifiTest::openUsbDrive()
             file = new QFile("/dev/sda");
             return;
         }
+        else
+            emit testStateUpdated(TEST_DEBUG, 0, new QString("/dev/sda doesn't exist"));
     }
     return;
 }
@@ -85,6 +98,8 @@ void WifiTest::startDownload(const char *urlChar)
     reply = accessManager->get(request);
     connect(reply, SIGNAL(downloadProgress(qint64, qint64)),
              this, SLOT(downloadProgress(qint64, qint64)));
+    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
+             this, SLOT(gotError(QNetworkReply::NetworkError)));
     connect(reply, SIGNAL(readyRead()),
              this, SLOT(readyRead()));
 }
@@ -102,9 +117,15 @@ void WifiTest::runTest() {
 
     // Wait for the download to finish (in the main thread)
     finished = false;
+    error = false;
     while (finished == false)
         sleep(1);
     file->close();
+
+    if (error) {
+        file->remove();
+        return;
+    }
 
     // Compare the result
     const QByteArray hashResult = hash->result().toHex();
@@ -131,8 +152,12 @@ void WifiTest::runTest() {
     }
 
     // Read in the file
-    while (!file->atEnd())
-        hash->addData(file->read(131072));
+    qint64 fileOffset = 0;
+    while (fileOffset < fileSize) {
+        QByteArray data = file->read(4096);
+        fileOffset += 4096;
+        hash->addData(data);
+    }
     file->close();
 
     // Compute the result and check it
