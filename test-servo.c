@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
-#include <linux/i2c.h>
 #include <stdint.h>
 #include <unistd.h>
 #include "fpga.h"
