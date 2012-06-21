@@ -274,6 +274,7 @@ void HDMITest::runTest() {
     struct jtag_state state;
     uint32_t idcode;
     QString *str;
+    int fd;
 
     jtag_open(&state);
     idcode = jtag_idcode(&state);
@@ -291,7 +292,7 @@ void HDMITest::runTest() {
     }
 
 #ifdef linux
-    int fd = open("/dev/input/event0", O_RDONLY);
+    fd = open("/dev/input/event0", O_RDONLY);
     struct input_event e;
 
     if (-1 == fd) {
