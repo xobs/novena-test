@@ -8,15 +8,32 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
     ui(new Ui::KovanTestWindow)
 {
     ui->setupUi(this);
+    ui->progressBar->setVisible(false);
+    ui->progressLabel->setVisible(false);
+    ui->testLog->setVisible(false);
+    ui->statusLabel->setVisible(false);
     showFullScreen();
     engine = new KovanTestEngine(this);
     engine->loadAllTests();
-    engine->runAllTests();
+
+    connect(ui->startTestsButton, SIGNAL(clicked(bool)),
+            this, SLOT(startTests()));
 }
 
 KovanTestWindow::~KovanTestWindow()
 {
     delete ui;
+}
+
+void KovanTestWindow::startTests()
+{
+    ui->progressBar->setVisible(true);
+    ui->progressLabel->setVisible(true);
+    ui->testLog->setVisible(true);
+    ui->statusLabel->setVisible(true);
+
+    ui->startTestsButton->setVisible(false);
+    engine->runAllTests();
 }
 
 void KovanTestWindow::setStatusText(QString *message)

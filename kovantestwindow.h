@@ -22,6 +22,9 @@ public:
 private:
     Ui::KovanTestWindow *ui;
     KovanTestEngine *engine;
+
+public slots:
+    void startTests();
 };
 
 #endif // KOVANTESTWINDOW_H
