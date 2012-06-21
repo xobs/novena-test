@@ -167,7 +167,6 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 		length = SWAP16(length);
 		bfr += sizeof(length);
 		size -= sizeof(length);
-		printf("Section %d size: %d\n", i, length);
 
 		bfr += length;
 		size -= length;
