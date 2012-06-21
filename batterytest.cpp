@@ -23,12 +23,12 @@ void BatteryTestStart::runTest() {
 	str->sprintf("Battery level: %d mV", battery_level);
 	emit testStateUpdated(TEST_INFO, 0, str);
 
-        return 0;
+	return;
 }
 
 BatteryTestStop::BatteryTestStop()
 {
-    name = new QString("Battery test finish");
+	name = new QString("Battery test finish");
 }
 
 
@@ -49,6 +49,6 @@ void BatteryTestStop::runTest() {
 	str->sprintf("Battery level: %d mV", battery_level);
 	emit testStateUpdated(TEST_INFO, 0, str);
 
-        return 0;
+	return;
 }
 
