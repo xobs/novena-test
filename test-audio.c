@@ -95,8 +95,7 @@ int test_audio(void) {
 			}
 		}
 		
-		val = read_adc(adc);
-		usleep(20000);
+		usleep(200000);
 		val = read_adc(adc);
 
 		if (val < adc_min[adc-8] || val > adc_max[adc-8])
