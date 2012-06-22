@@ -28,15 +28,27 @@ public:
     }
 };
 
+
+
 KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
 {
     currentTest = NULL;
     currentTestNumber = -1;
     currentThread = NULL;
     this->ui = ui;
+	debugMode = false;
 }
 
 
+void KovanTestEngine::setDebug(bool on)
+{
+	debugMode = on;
+}
+
+bool KovanTestEngine::debugModeOn()
+{
+	return debugMode;
+}
 
 bool KovanTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 1));
@@ -52,14 +64,37 @@ bool KovanTestEngine::loadAllTests() {
     tests.append(new BatteryTestStart());
     tests.append(new MotorTest());
     tests.append(new BatteryTestStop());
-    tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
+	tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
+
+	/* Wire up all signals and slots */
+	int i;
+	for (i=0; i<tests.count(); i++)
+		connect(tests.at(i), SIGNAL(testStateUpdated(int,int,QString*)),
+				this, SLOT(updateTestState(int,int,QString*)));
+
     return true;
+}
+
+const QList<KovanTest *> & KovanTestEngine::allTests() {
+	return tests;
 }
 
 /* Returns true if there are more tests to run */
 bool KovanTestEngine::runAllTests() {
     currentTestNumber = -1;
+	errorCount = 0;
+	testsToRun.clear();
+	testsToRun = tests;
     return runNextTest();
+}
+
+bool KovanTestEngine::runSelectedTests(QList<KovanTest *> &newTests)
+{
+	currentTestNumber = -1;
+	errorCount = 0;
+	testsToRun.clear();
+	testsToRun = newTests;
+	return runNextTest();
 }
 
 static const char *levelStr[] = {
@@ -68,9 +103,10 @@ static const char *levelStr[] = {
     "<font color=\"green\">DEBUG</font>",
 };
 
-void KovanTestEngine::updateTestState(int level, int value, QString *message) {
-    QString str;
+void KovanTestEngine::updateTestState(int level, int value, QString *message)
+{
 
+	QString str;
     str.append("<p>");
     str.append(levelStr[level]);
     str.append(": ");
@@ -79,14 +115,19 @@ void KovanTestEngine::updateTestState(int level, int value, QString *message) {
 
     if (level == TEST_INFO)
         qDebug() << "INFO:" << level << value << message->toAscii();
-    else if (level == TEST_ERROR)
+	else if (level == TEST_ERROR) {
         qDebug() << "ERROR:" << level << value << message->toAscii();
+		errorCount++;
+		QString str;
+		str.append(testsToRun.at(currentTestNumber)->testName());
+		ui->setErrorString(str);
+	}
     else if (level == TEST_DEBUG)
         qDebug() << "DEBUG:" << level << value << message->toAscii();
     else
         qDebug() << "????:" << level << value << message->toAscii();
 
-    delete message;
+	delete message;
 }
 
 
@@ -98,18 +139,26 @@ void KovanTestEngine::cleanupCurrentTest() {
     return;
 }
 
-bool KovanTestEngine::runNextTest()
+
+
+bool KovanTestEngine::runNextTest(int continueOnErrors)
 {
+	if (errorCount && !continueOnErrors && !debugMode) {
+		QString str;
+		str.append(testsToRun.at(currentTestNumber)->testName());
+		ui->finishTests(false);
+		return false;
+	}
+
+	// Increment the test number, and return if we've run out of tests.
     currentTestNumber++;
-    if (currentTestNumber >= tests.count()) {
+	if (currentTestNumber >= testsToRun.count()) {
         ui->setProgressBar(1);
-        return false;
+		ui->finishTests(errorCount?false:true);
+		return false;
     }
 
-    currentTest = tests[currentTestNumber];
-
-    QObject::connect(currentTest, SIGNAL(testStateUpdated(int,int,QString*)),
-                     this, SLOT(updateTestState(int,int,QString*)));
+	currentTest = testsToRun[currentTestNumber];
 
     currentThread = new KovanTestEngineThread(currentTest);
     QObject::connect(currentThread, SIGNAL(finished()),
@@ -117,9 +166,9 @@ bool KovanTestEngine::runNextTest()
     currentThread->start();
 
     ui->setStatusText(currentTest->testName());
-    ui->setProgressBar(currentTestNumber*1.0/tests.count());
+	ui->setProgressBar(currentTestNumber*1.0/testsToRun.count());
     QString progressText;
-    progressText.sprintf("Progress: %d/%d", currentTestNumber, tests.count()-1);
+	progressText.sprintf("Progress: %d/%d", currentTestNumber+1, testsToRun.count());
     ui->setProgressText(progressText);
     return true;
 }

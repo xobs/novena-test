@@ -54,6 +54,7 @@ void WifiTest::openUsbDrive()
     fileSize = 0;
     // Look through /proc/mounts for something containing "sda"
 
+#ifdef linux
     while (!found) {
         QFile mounts("/proc/mounts");
         QString line;
@@ -74,17 +75,12 @@ void WifiTest::openUsbDrive()
             }
             line = mounts.readLine();
         }
-
-        // Look for an unmounted device in /dev
-        QFile devSda("/dev/sda");
-        if (devSda.exists()) {
-            emit testStateUpdated(TEST_DEBUG, 0, new QString("No filesystem using, destructively using /dev/sda"));
-            file = new QFile("/dev/sda");
-            return;
-        }
-        else
-            emit testStateUpdated(TEST_DEBUG, 0, new QString("/dev/sda doesn't exist"));
     }
+#else
+    file = new QFile("download-test-file.bin");
+    file->open(QIODevice::WriteOnly);
+    return;
+#endif
     return;
 }
 

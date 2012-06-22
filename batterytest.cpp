@@ -13,11 +13,13 @@ void BatteryTestStart::runTest() {
 	str = new QString("Waiting for AC to be unplugged...");
 	emit testStateUpdated(TEST_INFO, 0, str);
 
+#ifdef linux
         for (battery_level = read_battery();
              battery_level > 12000;
              battery_level = read_battery()) {
                 usleep(100000);
         }
+#endif
 
 	str = new QString();
 	str->sprintf("Battery level: %d mV", battery_level);
@@ -39,11 +41,13 @@ void BatteryTestStop::runTest() {
 	str = new QString("Waiting for AC to be attached...");
 	emit testStateUpdated(TEST_INFO, 0, str);
 
+#ifdef linux
         for (battery_level = read_battery();
              battery_level < 12000;
              battery_level = read_battery()) {
                 usleep(100000);
         }
+#endif
 
 	str = new QString();
 	str->sprintf("Battery level: %d mV", battery_level);

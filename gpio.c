@@ -34,26 +34,31 @@ static int gpio_export_unexport(char *path, int gpio) {
 }
 
 int gpio_export(int gpio) {
+#ifdef linux
 	char export_path[4096];
 	struct stat buf;
 
 	snprintf(export_path, sizeof(export_path)-1, "%s/gpio%d", GPIO_PATH, gpio);
 	if (lstat(export_path, &buf))
 		return gpio_export_unexport(EXPORT_PATH, gpio);
+#endif
 	return 0;
 }
 
 int gpio_unexport(int gpio) {
+#ifdef linux
 	char export_path[4096];
 	struct stat buf;
 	snprintf(export_path, sizeof(export_path)-1, "%s/gpio%d", GPIO_PATH, gpio);
 
 	if (!lstat(export_path, &buf))
 		return gpio_export_unexport(UNEXPORT_PATH, gpio);
+#endif
 	return 0;
 }
 
 int gpio_set_direction(int gpio, int is_output) {
+#ifdef linux
 	char gpio_path[256];
 	int fd;
 	int ret;
@@ -79,11 +84,13 @@ int gpio_set_direction(int gpio, int is_output) {
 	}
 
 	close(fd);
+#endif
 	return 0;
 }
 
 
 int gpio_set_value(int gpio, int value) {
+#ifdef linux
 	char gpio_path[256];
 	int fd;
 	int ret;
@@ -109,11 +116,13 @@ int gpio_set_value(int gpio, int value) {
 	}
 
 	close(fd);
+#endif
 	return 0;
 }
 
 
 int gpio_get_value(int gpio) {
+#ifdef linux
 	char gpio_path[256];
 	int fd;
 
@@ -134,4 +143,7 @@ int gpio_get_value(int gpio) {
 	close(fd);
 
 	return gpio_path[0] != '0';
+#else
+	return 0;
+#endif
 }

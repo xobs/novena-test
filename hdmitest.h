@@ -5,6 +5,7 @@
 
 class HDMITest : public KovanTest
 {
+	Q_OBJECT
 public:
     HDMITest();
     void runTest();

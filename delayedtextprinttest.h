@@ -4,6 +4,7 @@
 
 class DelayedTextPrintTest : public KovanTest
 {
+	Q_OBJECT
 public:
     DelayedTextPrintTest(QString *message, double delay);
     void runTest();

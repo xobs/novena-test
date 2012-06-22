@@ -13,18 +13,26 @@ class KovanTestEngine : public QObject
     Q_OBJECT
 
 private:
-    QVector<KovanTest *> tests;
-    KovanTest *currentTest;
+	QList<KovanTest *> tests;
+	QList<KovanTest *>testsToRun;
+
+	KovanTest *currentTest;
     int currentTestNumber;
     KovanTestWindow *ui;
     KovanTestEngineThread *currentThread;
+	int errorCount;
+	bool debugMode;
 
 public:
     KovanTestEngine(KovanTestWindow *ui);
-    bool loadAllTests();
-    bool runAllTests();
+	void setDebug(bool on);
+	bool loadAllTests();
+	bool runAllTests();
+	bool runSelectedTests(QList<KovanTest *> &tests);
+	const QList<KovanTest *> & allTests();
 
-    bool runNextTest();
+	bool runNextTest(int continueOnErrors = 0);
+	bool debugModeOn();
 
 public slots:
     /* 

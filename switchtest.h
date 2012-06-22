@@ -4,6 +4,7 @@
 
 class SwitchTest : public KovanTest
 {
+	Q_OBJECT
 public:
     SwitchTest();
     void runTest();

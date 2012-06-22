@@ -4,6 +4,7 @@
 
 class BatteryTestStart : public KovanTest
 {
+	Q_OBJECT
 public:
     BatteryTestStart();
     void runTest();
