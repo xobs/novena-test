@@ -37,7 +37,6 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
     currentThread = NULL;
     this->ui = ui;
 	debugMode = false;
-	errorCount = 0;
 }
 
 
