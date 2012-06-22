@@ -32,7 +32,7 @@
    <string>KovanTestWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QWidget" name="mainLayout" native="true">
+   <widget class="QWidget" name="mainScreen" native="true">
     <property name="enabled">
      <bool>true</bool>
     </property>
@@ -217,6 +217,74 @@
       <string>Failed:</string>
      </property>
     </widget>
+    <widget class="QLabel" name="passLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>190</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="palette">
+      <palette>
+       <active>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>164</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </active>
+       <inactive>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>164</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </inactive>
+       <disabled>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>69</red>
+           <green>69</green>
+           <blue>69</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </disabled>
+      </palette>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>30</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Pass</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="testSelectionButton">
+     <property name="geometry">
+      <rect>
+       <x>190</x>
+       <y>190</y>
+       <width>114</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Test Selection</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="startScreen" native="true">
     <property name="geometry">
@@ -230,10 +298,10 @@
     <widget class="QPushButton" name="startTestsButton">
      <property name="geometry">
       <rect>
-       <x>170</x>
-       <y>180</y>
-       <width>141</width>
-       <height>51</height>
+       <x>160</x>
+       <y>170</y>
+       <width>150</width>
+       <height>60</height>
       </rect>
      </property>
      <property name="text">
@@ -1589,6 +1657,70 @@
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="selectTestButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>170</y>
+       <width>150</width>
+       <height>60</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Select Test</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="debugScreen" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>320</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <widget class="QListWidget" name="testListWidget">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>301</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="showDropIndicator" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="dragDropMode">
+      <enum>QAbstractItemView::NoDragDrop</enum>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::MultiSelection</enum>
+     </property>
+     <property name="movement">
+      <enum>QListView::Free</enum>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="runSelectedTestsButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>200</y>
+       <width>161</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Run selected tests</string>
      </property>
     </widget>
    </widget>

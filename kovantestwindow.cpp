@@ -1,7 +1,8 @@
-#include "kovantestwindow.h"
-#include "ui_kovantestwindow.h"
 #include <QDebug>
 #import <QScrollBar>
+
+#include "kovantestwindow.h"
+#include "ui_kovantestwindow.h"
 
 KovanTestWindow::KovanTestWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -9,24 +10,24 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+	// Start on the "Start Screen"
 	ui->startScreen->setVisible(true);
-
-	ui->mainLayout->setVisible(false);
-	ui->errorLabel->setVisible(false);
-	ui->errorFailLabel->setVisible(false);
+	ui->mainScreen->setVisible(false);
+	ui->debugScreen->setVisible(false);
 
 	ui->debugActiveLabel->setVisible(false);
+	ui->selectTestButton->setVisible(false);
 
 #ifdef linux
 	showFullScreen();
 #endif
+
     engine = new KovanTestEngine(this);
     engine->loadAllTests();
 
     connect(ui->startTestsButton, SIGNAL(clicked(bool)),
             this, SLOT(startTests()));
 
-	sequencePosition = 0;
 	connect(ui->debugMode1, SIGNAL(clicked(bool)),
 			this, SLOT(debugMode1Clicked()));
 	connect(ui->debugMode2, SIGNAL(clicked(bool)),
@@ -34,11 +35,38 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 	connect(ui->debugMode3, SIGNAL(clicked(bool)),
 			this, SLOT(debugMode3Clicked()));
 
+	connect(ui->runSelectedTestsButton, SIGNAL(clicked()),
+			this, SLOT(debugRunSelectedItems()));
+
+	connect(ui->testSelectionButton, SIGNAL(clicked()),
+			this, SLOT(moveToDebugScreen()));
+
+	// Start the secret debug code at stage 0
+	sequencePosition = 0;
 }
 
-KovanTestWindow::~KovanTestWindow()
+void KovanTestWindow::debugItemPressed(QListWidgetItem *item)
 {
-    delete ui;
+	if (ui->testListWidget->selectedItems().count())
+		ui->runSelectedTestsButton->setEnabled(true);
+	else
+		ui->runSelectedTestsButton->setEnabled(false);
+}
+
+void KovanTestWindow::debugRunSelectedItems()
+{
+	QList<QListWidgetItem *>selected = ui->testListWidget->selectedItems();
+	QList<KovanTest *>testsToRun;
+
+	int i;
+	for (i=0; i<selected.count(); i++) {
+		QVariant v = selected.at(i)->data(Qt::UserRole);
+		KovanTest *t = reinterpret_cast<KovanTest*>(v.value<void*>());
+		testsToRun.append(t);
+	}
+
+	moveToMainScreen();
+	engine->runSelectedTests(testsToRun);
 }
 
 void KovanTestWindow::debugMode1Clicked()
@@ -60,23 +88,67 @@ void KovanTestWindow::advanceDebugSequence(const char c)
 {
 	if (SEQUENCE[sequencePosition] == c)
 		sequencePosition++;
+	else if (SEQUENCE[0] == c)
+		sequencePosition = 1;
 	else
 		sequencePosition = 0;
 
-	qDebug() << "Sequence position:" << sequencePosition;
+	if (sequencePosition >= sizeof(SEQUENCE)-1)
+		moveToDebugScreen();
+}
 
-	if (sequencePosition >= sizeof(SEQUENCE)-1) {
-		ui->debugActiveLabel->setVisible(true);
-		sequencePosition = 0;
-		engine->setDebug(true);
+void KovanTestWindow::moveToDebugScreen()
+{
+	ui->debugActiveLabel->setVisible(true);
+	ui->selectTestButton->setVisible(true);
+	ui->debugMode1->setVisible(false);
+	ui->debugMode2->setVisible(false);
+	ui->debugMode3->setVisible(false);
+	ui->testSelectionButton->setVisible(false);
+	ui->errorFailLabel->setVisible(false);
+	ui->errorLabel->setVisible(false);
+	ui->passLabel->setVisible(false);
+
+	ui->runSelectedTestsButton->setEnabled(false);
+
+	sequencePosition = 0;
+	engine->setDebug(true);
+
+	ui->startScreen->setVisible(false);
+	ui->debugScreen->setVisible(true);
+
+	QList<KovanTest *>tests = engine->allTests();
+	int i;
+	ui->testListWidget->clear();
+	for (i=0; i<tests.count(); i++) {
+		QListWidgetItem *item = new QListWidgetItem(*(tests.at(i)->testName()));
+		QVariant v = QVariant::fromValue<void*>(tests.at(i));
+		item->setData(Qt::UserRole, v);
+		ui->testListWidget->addItem(item);
+		connect(ui->testListWidget, SIGNAL(itemPressed(QListWidgetItem *)),
+				this, SLOT(debugItemPressed(QListWidgetItem *)));
 	}
+	ui->testListWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
+}
+
+void KovanTestWindow::moveToMainScreen()
+{
+	ui->errorLabel->setVisible(false);
+	ui->errorFailLabel->setVisible(false);
+	ui->passLabel->setVisible(false);
+	ui->testSelectionButton->setVisible(false);
+	ui->progressBar->setVisible(true);
+	ui->progressLabel->setVisible(true);
+
+	ui->mainScreen->setVisible(true);
+	ui->debugScreen->setVisible(false);
+	ui->startScreen->setVisible(false);
 }
 
 void KovanTestWindow::startTests()
 {
-	ui->startScreen->setVisible(false);
-	ui->mainLayout->setVisible(true);
-    engine->runAllTests();
+	moveToMainScreen();
+	engine->runAllTests();
 }
 
 void KovanTestWindow::setStatusText(QString *message)
@@ -99,13 +171,25 @@ void KovanTestWindow::setProgressText(QString &message)
 void KovanTestWindow::setErrorString(QString &message)
 {
 	errorString = message;
+	ui->errorLabel->setText(errorString);
+}
 
+void KovanTestWindow::finishTests(bool successful)
+{
 	ui->progressLabel->setVisible(false);
 	ui->progressBar->setVisible(false);
 
-	ui->errorLabel->setText(errorString);
-	ui->errorLabel->setVisible(true);
-	ui->errorFailLabel->setVisible(true);
+	if (successful) {
+		ui->passLabel->setVisible(true);
+	}
+	else {
+		ui->errorLabel->setVisible(true);
+		ui->errorFailLabel->setVisible(true);
+	}
+
+	if (engine->debugModeOn()) {
+		ui->testSelectionButton->setVisible(true);
+	}
 }
 
 void KovanTestWindow::addTestLog(QString &message)
@@ -121,3 +205,7 @@ void KovanTestWindow::addTestLog(QString &message)
 		vert->setValue(vert->maximum());
 }
 
+KovanTestWindow::~KovanTestWindow()
+{
+	delete ui;
+}
