@@ -27,7 +27,7 @@ private:
     Ui::KovanTestWindow *ui;
     KovanTestEngine *engine;
 	QString errorString;
-	int sequencePosition;
+	unsigned int sequencePosition;
 	void advanceDebugSequence(const char c);
 
 public slots:
