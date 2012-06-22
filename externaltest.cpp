@@ -28,7 +28,7 @@ extern "C" {
 static struct tests tests[] = {
         { // 0  
                 test_accel_start,
-                "Begin background accelerometer read",
+				"Start accelerometer read",
                 "test-accel-start",
         },
         { // 1  
@@ -92,8 +92,10 @@ void ExternalTest::runTest() {
 
 
 void ExternalTest::harnessBridge(int level, int code, char *fmt, va_list ap) {
-    QString *tmp = new QString();
-    tmp->vsprintf(fmt, ap);
+	QString *tmp;
+
+	tmp = new QString();
+	tmp->vsprintf(fmt, ap);
     emit testStateUpdated(level, code, tmp);
 }
 
