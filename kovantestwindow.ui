@@ -65,7 +65,7 @@
        <x>12</x>
        <y>12</y>
        <width>291</width>
-       <height>17</height>
+       <height>25</height>
       </rect>
      </property>
      <property name="font">
@@ -275,8 +275,8 @@
     <widget class="QPushButton" name="testSelectionButton">
      <property name="geometry">
       <rect>
-       <x>190</x>
-       <y>190</y>
+       <x>200</x>
+       <y>5</y>
        <width>114</width>
        <height>32</height>
       </rect>
@@ -1698,7 +1698,7 @@
       <bool>false</bool>
      </property>
      <property name="dragDropMode">
-      <enum>QAbstractItemView::NoDragDrop</enum>
+      <enum>QAbstractItemView::DragOnly</enum>
      </property>
      <property name="alternatingRowColors">
       <bool>true</bool>
@@ -1708,6 +1708,9 @@
      </property>
      <property name="movement">
       <enum>QListView::Free</enum>
+     </property>
+     <property name="spacing">
+      <number>0</number>
      </property>
     </widget>
     <widget class="QPushButton" name="runSelectedTestsButton">

@@ -1,14 +1,31 @@
 #include <QDebug>
 #import <QScrollBar>
+#import <QCleanlooksStyle>
+#import <QStyle>
 
 #include "kovantestwindow.h"
 #include "ui_kovantestwindow.h"
+
+class BiggerScrollbar : public QCleanlooksStyle {
+
+public:
+	int pixelMetric(PixelMetric metric, const QStyleOption *, const QWidget *pWidget = 0) const
+	{
+		if ( metric == PM_ScrollBarExtent )
+		{
+		   return 50;
+		}
+		return  QWindowsStyle::pixelMetric( metric, 0, pWidget );
+	}
+};
 
 KovanTestWindow::KovanTestWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::KovanTestWindow)
 {
-    ui->setupUi(this);
+	QApplication::setStyle(new BiggerScrollbar);
+
+	ui->setupUi(this);
 
 	// Start on the "Start Screen"
 	ui->startScreen->setVisible(true);
@@ -124,6 +141,7 @@ void KovanTestWindow::moveToDebugScreen()
 		QListWidgetItem *item = new QListWidgetItem(*(tests.at(i)->testName()));
 		QVariant v = QVariant::fromValue<void*>(tests.at(i));
 		item->setData(Qt::UserRole, v);
+		item->setSizeHint(QSize(320,30));
 		ui->testListWidget->addItem(item);
 		connect(ui->testListWidget, SIGNAL(itemPressed(QListWidgetItem *)),
 				this, SLOT(debugItemPressed(QListWidgetItem *)));
@@ -143,6 +161,11 @@ void KovanTestWindow::moveToMainScreen()
 	ui->mainScreen->setVisible(true);
 	ui->debugScreen->setVisible(false);
 	ui->startScreen->setVisible(false);
+
+	QString str("");
+	addTestLog(str);
+	QScrollBar *vert = ui->testLog->verticalScrollBar();
+	vert->setValue(vert->maximum());
 }
 
 void KovanTestWindow::startTests()
