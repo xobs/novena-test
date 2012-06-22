@@ -5,7 +5,8 @@
 
 class MotorTest : public KovanTest
 {
-    uint16_t pwm_divider;
+	Q_OBJECT
+	uint16_t pwm_divider;
 public:
     MotorTest();
     void runTest();
