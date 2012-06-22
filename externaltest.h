@@ -6,7 +6,8 @@
 
 class ExternalTest : public KovanTest
 {
-    int testNumber;
+	Q_OBJECT
+	int testNumber;
 public:
     ExternalTest(QString *testName);
     void runTest();
