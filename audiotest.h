@@ -4,6 +4,7 @@
 
 class AudioTest : public KovanTest
 {
+	Q_OBJECT
 public:
     AudioTest();
     void runTest();
