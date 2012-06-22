@@ -28,14 +28,23 @@ public:
     }
 };
 
+
+
 KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
 {
     currentTest = NULL;
     currentTestNumber = -1;
     currentThread = NULL;
     this->ui = ui;
+	debugMode = false;
+	errorCount = 0;
 }
 
+
+void KovanTestEngine::setDebug(bool on)
+{
+	debugMode = on;
+}
 
 
 bool KovanTestEngine::loadAllTests() {
@@ -79,8 +88,10 @@ void KovanTestEngine::updateTestState(int level, int value, QString *message) {
 
     if (level == TEST_INFO)
         qDebug() << "INFO:" << level << value << message->toAscii();
-    else if (level == TEST_ERROR)
+	else if (level == TEST_ERROR) {
         qDebug() << "ERROR:" << level << value << message->toAscii();
+		errorCount++;
+	}
     else if (level == TEST_DEBUG)
         qDebug() << "DEBUG:" << level << value << message->toAscii();
     else
@@ -98,8 +109,18 @@ void KovanTestEngine::cleanupCurrentTest() {
     return;
 }
 
-bool KovanTestEngine::runNextTest()
+
+
+bool KovanTestEngine::runNextTest(int continueOnErrors)
 {
+	if (errorCount && !continueOnErrors && !debugMode) {
+		QString str;
+		str.append(tests.at(currentTestNumber)->testName());
+		ui->setErrorString(str);
+		return false;
+	}
+
+	// Increment the test number, and return if we've run out of tests.
     currentTestNumber++;
     if (currentTestNumber >= tests.count()) {
         ui->setProgressBar(1);

@@ -18,13 +18,16 @@ private:
     int currentTestNumber;
     KovanTestWindow *ui;
     KovanTestEngineThread *currentThread;
+	int errorCount;
+	bool debugMode;
 
 public:
     KovanTestEngine(KovanTestWindow *ui);
-    bool loadAllTests();
+	void setDebug(bool on);
+	bool loadAllTests();
     bool runAllTests();
 
-    bool runNextTest();
+	bool runNextTest(int continueOnErrors = 0);
 
 public slots:
     /* 

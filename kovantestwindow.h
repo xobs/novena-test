@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include "kovantestengine.h"
 
+const char SEQUENCE[] = "132231";
+
 namespace Ui {
 class KovanTestWindow;
 }
@@ -18,13 +20,21 @@ public:
     void setStatusText(QString *message);
     void setProgressBar(double progress);
     void setProgressText(QString &text);
+	void setErrorString(QString &message);
     void addTestLog(QString &message);
+
 private:
     Ui::KovanTestWindow *ui;
     KovanTestEngine *engine;
+	QString errorString;
+	int sequencePosition;
+	void advanceDebugSequence(const char c);
 
 public slots:
     void startTests();
+	void debugMode1Clicked();
+	void debugMode2Clicked();
+	void debugMode3Clicked();
 };
 
 #endif // KOVANTESTWINDOW_H
