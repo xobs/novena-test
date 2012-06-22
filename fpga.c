@@ -152,9 +152,28 @@ int sync_fpga(void) {
 	return 0;
 }
 
+
+
+#define PWM_PERIOD_LO 0x4d
+#define PWM_PERIOD_MD 0x4e
+#define PWM_PERIOD_HI 0x4f
+
+#define TIMEDIV (1.0 / 13000000) // 13 MHz clock
+#define PWM_PERIOD_RAW 0.02F
+#define PWM_PERIOD (PWM_PERIOD_RAW / TIMEDIV)
+static void set_pwm_period(uint32_t period) {
+        uint8_t *val = (uint8_t *)&period;
+	write_fpga(PWM_PERIOD_LO, val, 3);
+        return;
+}
+
+
 static uint32_t read_adc_internal(uint32_t channel, uint8_t is_battery) {
         uint16_t result;
 	int t, i;
+
+	/* For some reason this has to be set for ADC to work */
+	set_pwm_period(PWM_PERIOD);
 
 	if (channel == 8) {
 		gpio_export(ADC8_GPIO);
