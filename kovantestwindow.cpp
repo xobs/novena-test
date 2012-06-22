@@ -62,7 +62,7 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 	sequencePosition = 0;
 }
 
-void KovanTestWindow::debugItemPressed(QListWidgetItem *item)
+void KovanTestWindow::debugItemPressed(QListWidgetItem *)
 {
 	if (ui->testListWidget->selectedItems().count())
 		ui->runSelectedTestsButton->setEnabled(true);
