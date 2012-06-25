@@ -22,7 +22,9 @@ private:
     KovanTestEngineThread *currentThread;
 	int errorCount;
 	bool debugMode;
+	bool serialRead;
 	QString serialNumberString;
+	void updateSerialNumber();
 
 public:
     KovanTestEngine(KovanTestWindow *ui);

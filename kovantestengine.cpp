@@ -38,15 +38,23 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
     currentThread = NULL;
     this->ui = ui;
 	debugMode = false;
-
-	unsigned char serialTmp[7];
-	read_fpga_serial(serialTmp);
-	serialNumberString.sprintf("%02x%02x%02x%02x-%02x%02x-%02x",
-							  serialTmp[0], serialTmp[1], serialTmp[2], serialTmp[3],
-							  serialTmp[4], serialTmp[5],
-							  serialTmp[6]);
+	serialRead = false;
+	updateSerialNumber();
 }
 
+void KovanTestEngine::updateSerialNumber()
+{
+	if (!serialRead) {
+		unsigned char serialTmp[7];
+		if (read_fpga_serial(serialTmp))
+			return;
+		serialNumberString.sprintf("%02x-%02x%02x%02x-%02x%02x-%02x",
+								  serialTmp[0], serialTmp[1], serialTmp[2], serialTmp[3],
+								  serialTmp[4], serialTmp[5],
+								  serialTmp[6]);
+		serialRead = true;
+	}
+}
 
 void KovanTestEngine::setDebug(bool on)
 {
@@ -59,6 +67,7 @@ bool KovanTestEngine::debugModeOn()
 }
 
 const QString &KovanTestEngine::serialNumber() {
+	updateSerialNumber();
 	return serialNumberString;
 }
 
