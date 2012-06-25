@@ -15,7 +15,8 @@ uint32_t adc_min[] = {400, 300, 200, 100};
 // 44100 = 440 * 100 = 220 * 200 (200 samples high, 200 samples low)
 int test_audio(void) {
 	int i;
-	int adc, val;
+	unsigned int adc;
+	unsigned int val;
 	int err;
 	short buf[SND_BUF_SIZE];
 	unsigned int rate;
