@@ -37,6 +37,9 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 	ui->debugActiveLabel->setVisible(false);
 	ui->selectTestButton->setVisible(false);
 
+	ui->startTestsButton->setVisible(false);
+	ui->lookingForUSBLabel->setVisible(true);
+
 #ifdef linux
 	showFullScreen();
 #endif
@@ -72,6 +75,10 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 
 
 	openLogFile();
+
+	ui->startTestsButton->setVisible(true);
+	ui->lookingForUSBLabel->setVisible(false);
+
 }
 
 void KovanTestWindow::openLogFile()
@@ -80,6 +87,8 @@ void KovanTestWindow::openLogFile()
 	QString mountPoint;
 
 	while (1) {
+		qApp->processEvents();
+
 		QFile mounts("/proc/mounts");
 		QString line;
 
