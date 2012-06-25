@@ -11,6 +11,7 @@
 #include <linux/input.h>
 #endif
 
+#include <QDebug>
 
 #include "hdmitest.h"
 #include "gpio.h"
@@ -268,30 +269,90 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 HDMITest::HDMITest()
 {
     name = new QString("HDMI Test");
+	loadDefaultFirmware();
+}
+
+
+void HDMITest::loadDefaultFirmware()
+{
+#ifdef linux
+	struct jtag_state state;
+	uint32_t idcode;
+	int fd;
+
+	jtag_open(&state);
+	idcode = jtag_idcode(&state);
+	jtag_cleanup(&state);
+
+
+	if (idcode == LX9_JTAG) {
+		uint8_t bytes[sizeof(zerobytes_6slx9csg324)];
+		fd = open(LX9_FIRMWARE, O_RDONLY);
+		if (-1 == fd) {
+			qDebug() << "Unable to open LX9 firmware";
+			return;
+		}
+		if (read(fd, bytes, sizeof(bytes)) != sizeof(bytes)) {
+			qDebug() << "Unable to read LX9 firmware";
+			close(fd);
+			return;
+		}
+		close(fd);
+		loadFpgaFirmware(bytes, sizeof(bytes));
+	}
+	else if (idcode == LX45_JTAG) {
+		uint8_t bytes[sizeof(zerobytes_6slx45csg324)];
+		fd = open(LX45_FIRMWARE, O_RDONLY);
+		if (-1 == fd) {
+			qDebug() << "Unable to open LX45 firmware";
+			return;
+		}
+		if (read(fd, bytes, sizeof(bytes)) != sizeof(bytes)) {
+			qDebug() << "Unable to read LX45 firmware";
+			close(fd);
+			return;
+		}
+		close(fd);
+		loadFpgaFirmware(bytes, sizeof(bytes));
+	}
+	else {
+		qDebug() << "Unrecognized JTAG code:" << idcode;
+	}
+#endif
+}
+
+
+void HDMITest::loadTestFirmware()
+{
+#ifdef linux
+	struct jtag_state state;
+	uint32_t idcode;
+
+	jtag_open(&state);
+	idcode = jtag_idcode(&state);
+	jtag_cleanup(&state);
+
+	if (idcode == LX9_JTAG)
+		loadFpgaFirmware(zerobytes_6slx9csg324, sizeof(zerobytes_6slx9csg324));
+	else if (idcode == LX45_JTAG)
+		loadFpgaFirmware(zerobytes_6slx45csg324, sizeof(zerobytes_6slx45csg324));
+	else {
+		QString str;
+		str.sprintf("Unrecognized FPGA JTAG: 0x%08x", idcode);
+		qDebug() << str.toAscii();
+		return;
+	}
+#endif
 }
 
 void HDMITest::runTest() {
-    struct jtag_state state;
-    uint32_t idcode;
     QString *str;
     int fd;
 
-    jtag_open(&state);
-    idcode = jtag_idcode(&state);
-    jtag_cleanup(&state);
-
-    if (idcode == LX9_JTAG)
-        loadFpgaFirmware(zerobytes_6slx9csg324, sizeof(zerobytes_6slx9csg324));
-    else if (idcode == LX45_JTAG)
-        loadFpgaFirmware(zerobytes_6slx45csg324, sizeof(zerobytes_6slx45csg324));
-    else {
-        QString *str = new QString();
-        str->sprintf("Unrecognized FPGA JTAG: 0x%08x", idcode);
-        emit testStateUpdated(TEST_ERROR, 0, str);
-        return;
-    }
+	loadTestFirmware();
 
 #ifdef linux
+
     fd = open("/dev/input/event0", O_RDONLY);
     struct input_event e;
 
@@ -318,46 +379,13 @@ void HDMITest::runTest() {
 
     str = new QString("Side switch OK");
     emit testStateUpdated(TEST_INFO, 0, str);
+
 #else
-    str = new QString("Switch test skipped on this platform");
-    emit testStateUpdated(TEST_INFO, 0, str);
+	str = new QString("Skipping HDMI tests on this platform");
+	emit testStateUpdated(TEST_INFO, 0, str);
 #endif
 
-    
-    if (idcode == LX9_JTAG) {
-        uint8_t bytes[sizeof(zerobytes_6slx9csg324)];
-        fd = open(LX9_FIRMWARE, O_RDONLY);
-        if (-1 == fd) {
-            str = new QString("Unable to open LX9 firmware");
-            emit testStateUpdated(TEST_ERROR, 0, str);
-            return;
-        }
-        if (read(fd, bytes, sizeof(bytes)) != sizeof(bytes)) {
-            str = new QString("Unable to read LX9 firmware");
-            emit testStateUpdated(TEST_ERROR, 0, str);
-            close(fd);
-            return;
-        }
-        close(fd);
-        loadFpgaFirmware(bytes, sizeof(bytes));
-    }
-    else if (idcode == LX45_JTAG) {
-        uint8_t bytes[sizeof(zerobytes_6slx45csg324)];
-        fd = open(LX45_FIRMWARE, O_RDONLY);
-        if (-1 == fd) {
-            str = new QString("Unable to open LX45 firmware");
-            emit testStateUpdated(TEST_ERROR, 0, str);
-            return;
-        }
-        if (read(fd, bytes, sizeof(bytes)) != sizeof(bytes)) {
-            str = new QString("Unable to read LX45 firmware");
-            emit testStateUpdated(TEST_ERROR, 0, str);
-            close(fd);
-            return;
-        }
-        close(fd);
-        loadFpgaFirmware(bytes, sizeof(bytes));
-    }
+	loadDefaultFirmware();
 
     return;
 }

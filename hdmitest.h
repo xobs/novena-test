@@ -10,6 +10,8 @@ public:
     HDMITest();
     void runTest();
     void loadFpgaFirmware(const uint8_t *bytes, ssize_t size);
+	void loadDefaultFirmware();
+	void loadTestFirmware();
 };
 
 #endif // HDMITEST_H
