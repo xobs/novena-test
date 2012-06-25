@@ -58,6 +58,9 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 	connect(ui->testSelectionButton, SIGNAL(clicked()),
 			this, SLOT(moveToDebugScreen()));
 
+	serialLabelString.sprintf("Serial number: %s",
+							  (const char *)(engine->serialNumber().toAscii()));
+
 	// Start the secret debug code at stage 0
 	sequencePosition = 0;
 }

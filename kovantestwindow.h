@@ -31,6 +31,7 @@ private:
 	QString errorString;
 	unsigned int sequencePosition;
 	void advanceDebugSequence(const char c);
+	QString serialLabelString;
 
 public slots:
     void startTests();
