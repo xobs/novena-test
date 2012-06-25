@@ -275,10 +275,12 @@ void KovanTestWindow::finishTests(bool successful)
 
 	if (successful) {
 		ui->passLabel->setVisible(true);
+		logFile.write("<p><font color=\"green\">PASS</font>\n");
 	}
 	else {
 		ui->errorLabel->setVisible(true);
 		ui->errorFailLabel->setVisible(true);
+		logFile.write("<p><font color=\"red\">FAIL</font>\n");
 	}
 
 	if (engine->debugModeOn()) {
