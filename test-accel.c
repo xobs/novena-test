@@ -63,6 +63,7 @@ static int i2c_get(uint8_t i2c_addr, uint8_t reg_addr, char *bfr, int sz) {
 
 static void *i2c_background(void *_ignored) {
 	int failures_in_a_row = 0;
+	(void)_ignored; /* Remove "Unused parameter" compiler warning */
 
 	is_running = THR_RUNNING;
 
