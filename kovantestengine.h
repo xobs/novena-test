@@ -22,6 +22,7 @@ private:
     KovanTestEngineThread *currentThread;
 	int errorCount;
 	bool debugMode;
+	QString serialNumberString;
 
 public:
     KovanTestEngine(KovanTestWindow *ui);
@@ -33,6 +34,7 @@ public:
 
 	bool runNextTest(int continueOnErrors = 0);
 	bool debugModeOn();
+	const QString &serialNumber();
 
 public slots:
     /* 

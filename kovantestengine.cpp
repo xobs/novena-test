@@ -9,6 +9,7 @@
 #include "motortest.h"
 #include "switchtest.h"
 #include "hdmitest.h"
+#include "fpga.h"
 
 #include <QThread>
 #include <QDebug>
@@ -37,6 +38,13 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
     currentThread = NULL;
     this->ui = ui;
 	debugMode = false;
+
+	unsigned char serialTmp[7];
+	read_fpga_serial(serialTmp);
+	serialNumberString.sprintf("%02x%02x%02x%02x-%02x%02x-%02x",
+							  serialTmp[0], serialTmp[1], serialTmp[2], serialTmp[3],
+							  serialTmp[4], serialTmp[5],
+							  serialTmp[6]);
 }
 
 
@@ -48,6 +56,10 @@ void KovanTestEngine::setDebug(bool on)
 bool KovanTestEngine::debugModeOn()
 {
 	return debugMode;
+}
+
+const QString &KovanTestEngine::serialNumber() {
+	return serialNumberString;
 }
 
 bool KovanTestEngine::loadAllTests() {
