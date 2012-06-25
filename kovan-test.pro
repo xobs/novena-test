@@ -34,6 +34,7 @@ SOURCES += main.cpp\
 linux-gnueabi-oe-g++ {
     CONFIG += link_pkgconfig
     PKGCONFIG += alsa
+    QMAKE_CXXFLAGS += -Wno-psabi
 }
 
 
