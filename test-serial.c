@@ -63,7 +63,7 @@ int test_serial(void) {
 	tcsetattr(int_fd, TCSANOW, &new_int);
 
 	for (offset=0; offset<256; offset+=sizeof(bfr)) {
-		int i;
+		unsigned int i;
 		int err = 0;
 		int readval;
 		char bfr2[sizeof(bfr)];
@@ -103,7 +103,7 @@ int test_serial(void) {
 
 
 	for (offset=0; offset<256; offset+=sizeof(bfr)) {
-		int i;
+		unsigned int i;
 		int err = 0;
 		int readval;
 		char bfr2[sizeof(bfr)];
