@@ -1,7 +1,9 @@
 #include <QDebug>
-#import <QScrollBar>
-#import <QCleanlooksStyle>
-#import <QStyle>
+#include <QScrollBar>
+#include <QCleanlooksStyle>
+#include <QStyle>
+#include <QFile>
+#include <QDir>
 
 #include "kovantestwindow.h"
 #include "ui_kovantestwindow.h"
@@ -42,6 +44,7 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
     engine = new KovanTestEngine(this);
     engine->loadAllTests();
 
+	// Wire up all start-screen UI buttons
     connect(ui->startTestsButton, SIGNAL(clicked(bool)),
             this, SLOT(startTests()));
 
@@ -58,11 +61,70 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 	connect(ui->testSelectionButton, SIGNAL(clicked()),
 			this, SLOT(moveToDebugScreen()));
 
+
+	// Print out the serial number to the screen
 	serialLabelString.sprintf("Serial number: %s",
 							  (const char *)(engine->serialNumber().toAscii()));
+	ui->serialLabel->setText(serialLabelString);
 
 	// Start the secret debug code at stage 0
 	sequencePosition = 0;
+
+
+	openLogFile();
+}
+
+void KovanTestWindow::openLogFile()
+{
+#ifdef linux
+	QString mountPoint;
+
+	while (1) {
+		QFile mounts("/proc/mounts");
+		QString line;
+
+		mounts.open(QIODevice::ReadOnly | QIODevice::Text);
+		for (line = mounts.readLine();
+			 !line.isNull();
+			 line = mounts.readLine()) {
+			if (!line.contains("/media/sd"))
+				continue;
+
+			QString testDirectory;
+			QString testFile;
+			QString serial = engine->serialNumber();
+			QFile currentFile;
+
+			mountPoint = line.split(' ')[1];
+			QDir currentDir(mountPoint);
+
+			qDebug() << "Current dir (mountPoint):" << currentDir.path();
+			testDirectory = "kovan-logs/";
+			testDirectory.append(serial.split('-')[0]);
+
+			if (!currentDir.mkpath(testDirectory)) {
+				qDebug() << "Unable to make directory";
+				continue;
+			}
+
+			testFile = testDirectory;
+			testFile.append("/");
+			testFile.append(serial);
+			testFile.append(".html");
+
+			logFile.setFileName(currentDir.absoluteFilePath(testFile));
+			if (!logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+				qDebug() << "Unable to create logfile" << logFile.fileName();
+				continue;
+			}
+
+			logFile.write("<p>Started a new test\n");
+			logFile.flush();
+			return;
+		}
+	}
+#endif
+	return;
 }
 
 void KovanTestWindow::debugItemPressed(QListWidgetItem *)
@@ -173,6 +235,12 @@ void KovanTestWindow::moveToMainScreen()
 
 void KovanTestWindow::startTests()
 {
+	if (!logFile.isOpen()) {
+		logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+		logFile.write("<p>Restarted test\n");
+		logFile.flush();
+	}
+
 	moveToMainScreen();
 	engine->runAllTests();
 }
@@ -216,6 +284,8 @@ void KovanTestWindow::finishTests(bool successful)
 	if (engine->debugModeOn()) {
 		ui->testSelectionButton->setVisible(true);
 	}
+
+	logFile.close();
 }
 
 void KovanTestWindow::addTestLog(QString &message)
@@ -229,6 +299,12 @@ void KovanTestWindow::addTestLog(QString &message)
 
 	if (shouldScroll)
 		vert->setValue(vert->maximum());
+
+	if (logFile.isOpen()) {
+		logFile.write(message.toUtf8());
+		logFile.write("\n");
+		logFile.flush();
+	}
 }
 
 KovanTestWindow::~KovanTestWindow()

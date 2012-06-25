@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QListWidgetItem>
+#include <QFile>
 #include "kovantestengine.h"
 
 const char SEQUENCE[] = "132231";
@@ -30,8 +31,11 @@ private:
     KovanTestEngine *engine;
 	QString errorString;
 	unsigned int sequencePosition;
-	void advanceDebugSequence(const char c);
 	QString serialLabelString;
+	QFile logFile;
+
+	void advanceDebugSequence(const char c);
+	void openLogFile();
 
 public slots:
     void startTests();

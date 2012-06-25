@@ -48,6 +48,7 @@ HEADERS  += kovantestwindow.h \
     motortest.h \
     switchtest.h \
     hdmitest.h \
-    wifitest.h
+    wifitest.h \
+    fpga.h
 
 FORMS    += kovantestwindow.ui
