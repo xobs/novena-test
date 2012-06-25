@@ -60,7 +60,7 @@ static int find_usb_device(struct usb_descr *desc, char *product) {
 		char prodfile[2048];
 		char read_product[256];
 		FILE *prod;
-		int i;
+		unsigned int i;
 		snprintf(prodfile, sizeof(prodfile)-1, "%s/%s/product", USB_PATH, de->d_name);
 		prod = fopen(prodfile, "r");
 		if (!prod) {
@@ -171,7 +171,7 @@ static int my_init_module(char *modname) {
 	fstat(fd, &st);
 
 	char dat[st.st_size];
-	if (read(fd, dat, sizeof(dat)) != sizeof(dat)) {
+	if (read(fd, dat, sizeof(dat)) != (int)sizeof(dat)) {
 		harness_error(2, "Couldn't read %s module off disk: %s", modname, strerror(errno));
 		close(fd);
 		return -2;
