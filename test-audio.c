@@ -7,8 +7,8 @@
 
 #define SND_BUF_SIZE 400
 
-uint32_t adc_min[] = {430, 350, 250, 150};
-uint32_t adc_max[] = {550, 480, 325, 200};
+uint32_t adc_max[] = {800, 480, 400, 200};
+uint32_t adc_min[] = {400, 300, 200, 100};
 
 #ifdef linux
 #include <alsa/asoundlib.h>
@@ -87,6 +87,7 @@ int test_audio(void) {
 
 
 	for (adc=8; adc <= 11; adc++) {
+		read_adc(adc);
 		for (i=0; i<50; i++) {
 			if ((err = snd_pcm_writei(pcm, buf, SND_BUF_SIZE)) != SND_BUF_SIZE) {
 				harness_error(9, "write to audio interface failed (%s)",
