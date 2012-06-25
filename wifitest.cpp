@@ -19,12 +19,12 @@ WifiTest::WifiTest()
 }
 
 
-void WifiTest::replyFinished(QNetworkReply *reply)
+void WifiTest::replyFinished(QNetworkReply *)
 {
     finished = true;
 }
 
-void WifiTest::gotError(QNetworkReply::NetworkError code)
+void WifiTest::gotError(QNetworkReply::NetworkError)
 {
     QString *str = new QString("Encountered network error: ");
     str->append(reply->errorString());
@@ -33,7 +33,7 @@ void WifiTest::gotError(QNetworkReply::NetworkError code)
     finished = true;
 }
 
-void WifiTest::downloadProgress(qint64 bytesReceived, qint64 bytesTotal)
+void WifiTest::downloadProgress(qint64, qint64)
 {
 }
 
@@ -49,12 +49,13 @@ void WifiTest::readyRead(void)
 
 void WifiTest::openUsbDrive()
 {
-    bool found = false;
     QString mountPoint;
     fileSize = 0;
     // Look through /proc/mounts for something containing "sda"
 
 #ifdef linux
+	bool found = false;
+
     while (!found) {
         QFile mounts("/proc/mounts");
         QString line;
@@ -75,11 +76,11 @@ void WifiTest::openUsbDrive()
             }
             line = mounts.readLine();
         }
-    }
+	}
 #else
-    file = new QFile("download-test-file.bin");
-    file->open(QIODevice::WriteOnly);
-    return;
+	file = new QFile("download-test-file.bin");
+	file->open(QIODevice::WriteOnly);
+	return;
 #endif
     return;
 }
