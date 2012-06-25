@@ -15,6 +15,8 @@ int sync_fpga(void);
 uint32_t read_adc(uint32_t channel);
 uint32_t read_battery(void);
 
+uint32_t read_fpga_serial(uint8_t serial[7]);
+
 #ifdef __cplusplus
 }
 #endif

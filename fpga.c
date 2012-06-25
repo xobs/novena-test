@@ -14,6 +14,8 @@
 #define ADC_SAMPLE 0x46
 #define ADC_VAL 0x81
 
+#define SERIAL_BYTE_0 0x38
+
 /* This GPIO needs to go high to measure battery voltage */
 #define ADC8_GPIO 79
 
@@ -200,4 +202,9 @@ uint32_t read_battery(void) {
 uint32_t read_adc(uint32_t channel) {
 	read_adc_internal(channel, 0);
 	return read_adc_internal(channel, 0);
+}
+
+
+uint32_t read_fpga_serial(uint8_t serial[7]) {
+	return read_fpga(SERIAL_BYTE_0, serial, 7);
 }
