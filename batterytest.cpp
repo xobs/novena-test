@@ -1,24 +1,28 @@
 #include "batterytest.h"
 #include "fpga.h"
+#include "gpio.h"
+
+#define AC_PRESENT_GPIO 43
 
 BatteryTestStart::BatteryTestStart()
 {
     name = new QString("Battery test start");
+	gpio_export(AC_PRESENT_GPIO);
+	gpio_set_direction(AC_PRESENT_GPIO, 0);
 }
 
 void BatteryTestStart::runTest() {
-        uint32_t battery_level;
+	uint32_t battery_level = 0;
 	QString *str;
 
 	str = new QString("Waiting for AC to be unplugged...");
 	emit testStateUpdated(TEST_INFO, 0, str);
 
 #ifdef linux
-        for (battery_level = read_battery();
-             battery_level > 12000;
-             battery_level = read_battery()) {
-                usleep(100000);
-        }
+	/* Wait for AC to be unplugged */
+	while (gpio_get_value(AC_PRESENT_GPIO))
+		usleep(10000);
+	battery_level = read_battery();
 #endif
 
 	str = new QString();
@@ -42,11 +46,11 @@ void BatteryTestStop::runTest() {
 	emit testStateUpdated(TEST_INFO, 0, str);
 
 #ifdef linux
-        for (battery_level = read_battery();
-             battery_level < 12000;
-             battery_level = read_battery()) {
-                usleep(100000);
-        }
+	/* Wait for AC to get plugged in again */
+	while (!gpio_get_value(AC_PRESENT_GPIO))
+		usleep(10000);
+
+	battery_level = read_battery();
 #endif
 
 	str = new QString();
