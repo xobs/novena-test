@@ -2,6 +2,7 @@
 #include <QString>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #ifdef linux
 #include <linux/input.h>
@@ -15,24 +16,24 @@ SwitchTest::SwitchTest()
 }
 
 void SwitchTest::runTest() {
-    QString *str;
+    QString str;
 #ifdef linux
     int fd = open("/dev/input/event0", O_RDONLY);
     struct input_event e;
 
     if (-1 == fd) {
-        str = new QString("Unable to open switch: ");
-        str->append(strerror(errno));
+        str = QString("Unable to open switch: ");
+        str.append(strerror(errno));
         emit testStateUpdated(TEST_ERROR, 0, str);
         return;
     }
 
-    str = new QString("Please press the side switch");
+    str = QString("Please press the side switch");
     emit testStateUpdated(TEST_INFO, 0, str);
 
     if (read(fd, &e, sizeof(e)) != sizeof(e)) {
-        str = new QString("Unable to read switch: ");
-        str->append(strerror(errno));
+        str = QString("Unable to read switch: ");
+        str.append(strerror(errno));
         emit testStateUpdated(TEST_ERROR, 0, str);
         close(fd);
         return;
@@ -41,10 +42,10 @@ void SwitchTest::runTest() {
     close(fd);
 
 
-    str = new QString("Side switch OK");
+    str = QString("Side switch OK");
     emit testStateUpdated(TEST_INFO, 0, str);
 #else
-    str = new QString("Switch test skipped on this platform");
+    str = QString("Switch test skipped on this platform");
     emit testStateUpdated(TEST_INFO, 0, str);
 #endif
 

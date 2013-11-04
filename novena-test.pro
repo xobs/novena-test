@@ -6,29 +6,23 @@
 
 QT       += core gui network
 
-TARGET = kovan-test
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+TARGET = novena-test
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        kovantestwindow.cpp \
-    kovantest.cpp \
-    externaltest.cpp \
-    kovantestengine.cpp \
     delayedtextprinttest.cpp \
     audiotest.cpp \
-    motortest.cpp \
     switchtest.cpp \
-    test-accel.c \
-    test-audio.c \
-    test-io.c \
-    test-serial.c \
-    test-servo.c \
-    test-usb.c \
-    batterytest.cpp \
     hdmitest.cpp \
     fpga.c gpio.c \
-    wifitest.cpp
+    wifitest.cpp \
+    novenatestwindow.cpp \
+    novenatestengine.cpp \
+    novenatest.cpp \
+    mmctest.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -39,17 +33,16 @@ linux-gnueabi-oe-g++ {
 
 
 
-HEADERS  += kovantestwindow.h \
-    kovantest.h \
-    externaltest.h \
-    kovantestengine.h \
+HEADERS  += novenatestwindow.h \
+    novenatest.h \
+    novenatestengine.h \
     delayedtextprinttest.h \
-    batterytest.h \
     audiotest.h \
-    motortest.h \
     switchtest.h \
     hdmitest.h \
     wifitest.h \
-    fpga.h
+    fpga.h \
+    mmctest.h
 
-FORMS    += kovantestwindow.ui
+FORMS    += novenatestwindow.ui
+

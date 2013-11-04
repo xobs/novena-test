@@ -1,9 +1,9 @@
 #ifndef HDMITEST_H
 #define HDMITEST_H
 #include <stdint.h>
-#include "kovantest.h"
+#include "novenatest.h"
 
-class HDMITest : public KovanTest
+class HDMITest : public NovenaTest
 {
 	Q_OBJECT
 public:

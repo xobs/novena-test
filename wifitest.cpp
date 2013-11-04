@@ -1,6 +1,6 @@
-#include "wifitest.h"
-#include <Qt/QtNetwork>
+#include <unistd.h>
 #include <QApplication>
+#include "wifitest.h"
 
 
 //#define FILE_URL "http://edmond.local/~smc/bigfile.bin"
@@ -26,8 +26,8 @@ void WifiTest::replyFinished(QNetworkReply *)
 
 void WifiTest::gotError(QNetworkReply::NetworkError)
 {
-    QString *str = new QString("Encountered network error: ");
-    str->append(reply->errorString());
+    QString str("Encountered network error: ");
+    str.append(reply->errorString());
     emit testStateUpdated(TEST_ERROR, 0, str);
     error = true;
     finished = true;
@@ -54,6 +54,7 @@ void WifiTest::openUsbDrive()
     // Look through /proc/mounts for something containing "sda"
 
 #ifdef linux
+    /*
 	bool found = false;
 
     while (!found) {
@@ -77,10 +78,10 @@ void WifiTest::openUsbDrive()
             line = mounts.readLine();
         }
 	}
+    */
 #else
 	file = new QFile("download-test-file.bin");
 	file->open(QIODevice::WriteOnly);
-	return;
 #endif
     return;
 }
@@ -105,12 +106,12 @@ void WifiTest::runTest() {
 
     hash = new QCryptographicHash(QCryptographicHash::Sha1);
 
-    emit testStateUpdated(TEST_INFO, 0, new QString("Looking for USB drive..."));
+    emit testStateUpdated(TEST_INFO, 0, QString("Looking for USB drive..."));
     openUsbDrive();
     
 
     emit doStartDownload(FILE_URL);
-    emit testStateUpdated(TEST_INFO, 0, new QString("Downloading test file..."));
+    emit testStateUpdated(TEST_INFO, 0, QString("Downloading test file..."));
 
     // Wait for the download to finish (in the main thread)
     finished = false;
@@ -128,13 +129,12 @@ void WifiTest::runTest() {
     const QByteArray hashResult = hash->result().toHex();
     const QByteArray testResult(FILE_SUM);
     if (hashResult == testResult) {
-        QString *str = new QString();
-        str->sprintf("Stream hash matches");
+        QString str = "Stream hash matches";
         emit testStateUpdated(TEST_INFO, 0, str);
     }
     else {
-        QString *str = new QString();
-        str->sprintf("Stream hashes don't match! Got %s, wanted %s", hashResult.data(), testResult.data());
+        QString str;
+        str.sprintf("Stream hashes don't match! Got %s, wanted %s", hashResult.data(), testResult.data());
         emit testStateUpdated(TEST_ERROR, 0, str);
     }
 
@@ -144,7 +144,7 @@ void WifiTest::runTest() {
     hash = new QCryptographicHash(QCryptographicHash::Sha1);
     system("sync");
     if (!file->open(QIODevice::ReadOnly)) {
-        emit testStateUpdated(TEST_INFO, 0, new QString("Attempted to open file for hash check but failed"));
+        emit testStateUpdated(TEST_INFO, 0, QString("Attempted to open file for hash check but failed"));
         return;
     }
 
@@ -160,14 +160,12 @@ void WifiTest::runTest() {
     // Compute the result and check it
     const QByteArray hashResult2 = hash->result().toHex();
     if (hashResult2 == testResult) {
-        QString *str = new QString();
-        str->sprintf("File hash matches");
-        emit testStateUpdated(TEST_INFO, 0, str);
+        emit testStateUpdated(TEST_INFO, 0, QString("File hash matches"));
         file->remove();
     }
     else {
-        QString *str = new QString();
-        str->sprintf("File hashes don't match! Got %s, wanted %s", hashResult2.data(), testResult.data());
+        QString str;
+        str.sprintf("File hashes don't match! Got %s, wanted %s", hashResult2.data(), testResult.data());
         emit testStateUpdated(TEST_ERROR, 0, str);
     }
     delete hash;

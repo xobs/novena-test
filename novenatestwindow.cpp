@@ -1,13 +1,14 @@
 #include <QDebug>
 #include <QScrollBar>
-#include <QCleanlooksStyle>
+//#include <QCleanlooksStyle>
 #include <QStyle>
 #include <QFile>
 #include <QDir>
 
-#include "kovantestwindow.h"
-#include "ui_kovantestwindow.h"
+#include "novenatestwindow.h"
+#include "ui_novenatestwindow.h"
 
+/*
 class BiggerScrollbar : public QCleanlooksStyle {
 
 public:
@@ -20,12 +21,13 @@ public:
 		return  QWindowsStyle::pixelMetric( metric, 0, pWidget );
 	}
 };
+*/
 
-KovanTestWindow::KovanTestWindow(QWidget *parent) :
+NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::KovanTestWindow)
+    ui(new Ui::NovenaTestWindow)
 {
-	QApplication::setStyle(new BiggerScrollbar);
+    //QApplication::setStyle(new BiggerScrollbar);
 
 	ui->setupUi(this);
 
@@ -40,11 +42,11 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 	ui->startTestsButton->setVisible(false);
 	ui->lookingForUSBLabel->setVisible(true);
 
-#ifdef linux
-	showFullScreen();
-#endif
+//#ifdef linux
+//	showFullScreen();
+//#endif
 
-    engine = new KovanTestEngine(this);
+    engine = new NovenaTestEngine(this);
     engine->loadAllTests();
 
 	// Wire up all start-screen UI buttons
@@ -66,22 +68,20 @@ KovanTestWindow::KovanTestWindow(QWidget *parent) :
 
 
 	// Print out the serial number to the screen
-	serialLabelString.sprintf("Serial number: %s",
-							  (const char *)(engine->serialNumber().toAscii()));
-	ui->serialLabel->setText(serialLabelString);
+    ui->serialLabel->setText(QString("Serial number: %1").arg(engine->serialNumber()));
 
 	// Start the secret debug code at stage 0
 	sequencePosition = 0;
 
 
-	openLogFile();
+    //openLogFile();
 
 	ui->startTestsButton->setVisible(true);
 	ui->lookingForUSBLabel->setVisible(false);
 
 }
 
-void KovanTestWindow::openLogFile()
+void NovenaTestWindow::openLogFile()
 {
 #ifdef linux
 	QString mountPoint;
@@ -108,7 +108,7 @@ void KovanTestWindow::openLogFile()
 			QDir currentDir(mountPoint);
 
 			qDebug() << "Current dir (mountPoint):" << currentDir.path();
-			testDirectory = "kovan-logs/";
+			testDirectory = "novena-logs/";
 			testDirectory.append(serial.split('-')[0]);
 
 			if (!currentDir.mkpath(testDirectory)) {
@@ -136,7 +136,7 @@ void KovanTestWindow::openLogFile()
 	return;
 }
 
-void KovanTestWindow::debugItemPressed(QListWidgetItem *)
+void NovenaTestWindow::debugItemPressed(QListWidgetItem *)
 {
 	if (ui->testListWidget->selectedItems().count())
 		ui->runSelectedTestsButton->setEnabled(true);
@@ -144,15 +144,15 @@ void KovanTestWindow::debugItemPressed(QListWidgetItem *)
 		ui->runSelectedTestsButton->setEnabled(false);
 }
 
-void KovanTestWindow::debugRunSelectedItems()
+void NovenaTestWindow::debugRunSelectedItems()
 {
 	QList<QListWidgetItem *>selected = ui->testListWidget->selectedItems();
-	QList<KovanTest *>testsToRun;
+	QList<NovenaTest *>testsToRun;
 
 	int i;
 	for (i=0; i<selected.count(); i++) {
 		QVariant v = selected.at(i)->data(Qt::UserRole);
-		KovanTest *t = reinterpret_cast<KovanTest*>(v.value<void*>());
+		NovenaTest *t = reinterpret_cast<NovenaTest*>(v.value<void*>());
 		testsToRun.append(t);
 	}
 
@@ -160,22 +160,22 @@ void KovanTestWindow::debugRunSelectedItems()
 	engine->runSelectedTests(testsToRun);
 }
 
-void KovanTestWindow::debugMode1Clicked()
+void NovenaTestWindow::debugMode1Clicked()
 {
 	advanceDebugSequence('1');
 }
 
-void KovanTestWindow::debugMode2Clicked()
+void NovenaTestWindow::debugMode2Clicked()
 {
 	advanceDebugSequence('2');
 }
 
-void KovanTestWindow::debugMode3Clicked()
+void NovenaTestWindow::debugMode3Clicked()
 {
 	advanceDebugSequence('3');
 }
 
-void KovanTestWindow::advanceDebugSequence(const char c)
+void NovenaTestWindow::advanceDebugSequence(const char c)
 {
 	if (SEQUENCE[sequencePosition] == c)
 		sequencePosition++;
@@ -188,7 +188,7 @@ void KovanTestWindow::advanceDebugSequence(const char c)
 		moveToDebugScreen();
 }
 
-void KovanTestWindow::moveToDebugScreen()
+void NovenaTestWindow::moveToDebugScreen()
 {
 	ui->debugActiveLabel->setVisible(true);
 	ui->selectTestButton->setVisible(true);
@@ -208,7 +208,7 @@ void KovanTestWindow::moveToDebugScreen()
 	ui->startScreen->setVisible(false);
 	ui->debugScreen->setVisible(true);
 
-	QList<KovanTest *>tests = engine->allTests();
+	QList<NovenaTest *>tests = engine->allTests();
 	int i;
 	ui->testListWidget->clear();
 	for (i=0; i<tests.count(); i++) {
@@ -223,7 +223,7 @@ void KovanTestWindow::moveToDebugScreen()
 	ui->testListWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
 }
 
-void KovanTestWindow::moveToMainScreen()
+void NovenaTestWindow::moveToMainScreen()
 {
 	ui->errorLabel->setVisible(false);
 	ui->errorFailLabel->setVisible(false);
@@ -242,7 +242,7 @@ void KovanTestWindow::moveToMainScreen()
 	vert->setValue(vert->maximum());
 }
 
-void KovanTestWindow::startTests()
+void NovenaTestWindow::startTests()
 {
 	if (!logFile.isOpen()) {
 		logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
@@ -254,30 +254,30 @@ void KovanTestWindow::startTests()
 	engine->runAllTests();
 }
 
-void KovanTestWindow::setStatusText(QString *message)
+void NovenaTestWindow::setStatusText(QString *message)
 {
     ui->statusLabel->setText(*message);
     return;
 }
 
-void KovanTestWindow::setProgressBar(double progress)
+void NovenaTestWindow::setProgressBar(double progress)
 {
     ui->progressBar->setValue(progress*100);
     return;
 }
 
-void KovanTestWindow::setProgressText(QString &message)
+void NovenaTestWindow::setProgressText(QString &message)
 {
     ui->progressLabel->setText(message);
 }
 
-void KovanTestWindow::setErrorString(QString &message)
+void NovenaTestWindow::setErrorString(QString &message)
 {
 	errorString = message;
 	ui->errorLabel->setText(errorString);
 }
 
-void KovanTestWindow::finishTests(bool successful)
+void NovenaTestWindow::finishTests(bool successful)
 {
 	ui->progressLabel->setVisible(false);
 	ui->progressBar->setVisible(false);
@@ -299,7 +299,7 @@ void KovanTestWindow::finishTests(bool successful)
 	logFile.close();
 }
 
-void KovanTestWindow::addTestLog(QString &message)
+void NovenaTestWindow::addTestLog(QString &message)
 {
 	QScrollBar *vert = ui->testLog->verticalScrollBar();
 	bool shouldScroll = false;
@@ -318,7 +318,7 @@ void KovanTestWindow::addTestLog(QString &message)
 	}
 }
 
-KovanTestWindow::~KovanTestWindow()
+NovenaTestWindow::~NovenaTestWindow()
 {
 	delete ui;
 }

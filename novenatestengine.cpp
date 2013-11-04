@@ -1,23 +1,19 @@
-#include "kovantestengine.h"
-#include "kovantest.h"
-#include "kovantestwindow.h"
-
-#include "externaltest.h"
-#include "delayedtextprinttest.h"
-#include "wifitest.h"
-#include "batterytest.h"
-#include "motortest.h"
-#include "switchtest.h"
-#include "hdmitest.h"
-#include "fpga.h"
-
 #include <QThread>
 #include <QDebug>
-class KovanTest;
-class KovanTestEngineThread : public QThread {
-    KovanTest *tst;
+
+#include "novenatestengine.h"
+#include "novenatest.h"
+#include "novenatestwindow.h"
+
+/* Available Tests */
+#include "delayedtextprinttest.h"
+#include "mmctest.h"
+
+class NovenaTest;
+class NovenaTestEngineThread : public QThread {
+    NovenaTest *tst;
 public:
-    KovanTestEngineThread(KovanTest *t) {
+    NovenaTestEngineThread(NovenaTest *t) {
         tst = t;
     }
 
@@ -31,7 +27,7 @@ public:
 
 
 
-KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
+NovenaTestEngine::NovenaTestEngine(NovenaTestWindow *ui)
 {
     currentTest = NULL;
     currentTestNumber = -1;
@@ -42,66 +38,57 @@ KovanTestEngine::KovanTestEngine(KovanTestWindow *ui)
 	updateSerialNumber();
 }
 
-void KovanTestEngine::updateSerialNumber()
+void NovenaTestEngine::updateSerialNumber()
 {
 	if (!serialRead) {
 		unsigned char serialTmp[7];
-		if (read_fpga_serial(serialTmp))
+//		if (read_fpga_serial(serialTmp))
 			return;
+            /*
 		serialNumberString.sprintf("%02x-%02x%02x%02x-%02x%02x-%02x",
 								  serialTmp[0], serialTmp[1], serialTmp[2], serialTmp[3],
 								  serialTmp[4], serialTmp[5],
 								  serialTmp[6]);
+                                  */
 		serialRead = true;
 	}
 }
 
-void KovanTestEngine::setDebug(bool on)
+void NovenaTestEngine::setDebug(bool on)
 {
 	debugMode = on;
 }
 
-bool KovanTestEngine::debugModeOn()
+bool NovenaTestEngine::debugModeOn()
 {
 	return debugMode;
 }
 
-const QString &KovanTestEngine::serialNumber() {
+const QString &NovenaTestEngine::serialNumber() {
 	updateSerialNumber();
 	return serialNumberString;
 }
 
-bool KovanTestEngine::loadAllTests() {
-    tests.append(new DelayedTextPrintTest(new QString("Starting tests..."), 1));
-    tests.append(new ExternalTest(new QString("test-accel-start")));
-    tests.append(new HDMITest());
-    tests.append(new ExternalTest(new QString("test-audio")));
-    tests.append(new ExternalTest(new QString("test-serial")));
-    tests.append(new ExternalTest(new QString("test-servo")));
-    tests.append(new ExternalTest(new QString("test-io")));
-    tests.append(new ExternalTest(new QString("test-usb")));
-    tests.append(new ExternalTest(new QString("test-accel-finish")));
-    tests.append(new WifiTest());
-    tests.append(new BatteryTestStart());
-    tests.append(new MotorTest());
-    tests.append(new BatteryTestStop());
-	tests.append(new DelayedTextPrintTest(new QString("Done!"), 0));
+bool NovenaTestEngine::loadAllTests() {
+    tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
+    tests.append(new MMCTest());
+    tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
 
 	/* Wire up all signals and slots */
 	int i;
 	for (i=0; i<tests.count(); i++)
-		connect(tests.at(i), SIGNAL(testStateUpdated(int,int,QString*)),
-				this, SLOT(updateTestState(int,int,QString*)));
+        connect(tests.at(i), SIGNAL(testStateUpdated(int,int,QString)),
+                this, SLOT(updateTestState(int,int,QString)));
 
     return true;
 }
 
-const QList<KovanTest *> & KovanTestEngine::allTests() {
+const QList<NovenaTest *> & NovenaTestEngine::allTests() {
 	return tests;
 }
 
 /* Returns true if there are more tests to run */
-bool KovanTestEngine::runAllTests() {
+bool NovenaTestEngine::runAllTests() {
     currentTestNumber = -1;
 	errorCount = 0;
 	testsToRun.clear();
@@ -109,7 +96,7 @@ bool KovanTestEngine::runAllTests() {
     return runNextTest();
 }
 
-bool KovanTestEngine::runSelectedTests(QList<KovanTest *> &newTests)
+bool NovenaTestEngine::runSelectedTests(QList<NovenaTest *> &newTests)
 {
 	currentTestNumber = -1;
 	errorCount = 0;
@@ -124,7 +111,7 @@ static const char *levelStr[] = {
     "<font color=\"green\">DEBUG</font>",
 };
 
-void KovanTestEngine::updateTestState(int level, int value, QString *message)
+void NovenaTestEngine::updateTestState(int level, int value, const QString message)
 {
 
 	QString str;
@@ -135,25 +122,23 @@ void KovanTestEngine::updateTestState(int level, int value, QString *message)
     ui->addTestLog(str);
 
     if (level == TEST_INFO)
-        qDebug() << "INFO:" << level << value << message->toAscii();
+        qDebug() << "INFO:" << level << value << message.toLatin1();
 	else if (level == TEST_ERROR) {
-        qDebug() << "ERROR:" << level << value << message->toAscii();
+        qDebug() << "ERROR:" << level << value << message.toLatin1();
 		errorCount++;
 		QString str;
 		str.append(testsToRun.at(currentTestNumber)->testName());
 		ui->setErrorString(str);
 	}
     else if (level == TEST_DEBUG)
-        qDebug() << "DEBUG:" << level << value << message->toAscii();
+        qDebug() << "DEBUG:" << level << value << message.toLatin1();
     else
-        qDebug() << "????:" << level << value << message->toAscii();
-
-	delete message;
+        qDebug() << "????:" << level << value << message.toLatin1();
 }
 
 
 
-void KovanTestEngine::cleanupCurrentTest() {
+void NovenaTestEngine::cleanupCurrentTest() {
     delete currentThread;
     currentThread = NULL;
     runNextTest();
@@ -162,7 +147,7 @@ void KovanTestEngine::cleanupCurrentTest() {
 
 
 
-bool KovanTestEngine::runNextTest(int continueOnErrors)
+bool NovenaTestEngine::runNextTest(int continueOnErrors)
 {
 	if (errorCount && !continueOnErrors && !debugMode) {
 		QString str;
@@ -181,7 +166,7 @@ bool KovanTestEngine::runNextTest(int continueOnErrors)
 
 	currentTest = testsToRun[currentTestNumber];
 
-    currentThread = new KovanTestEngineThread(currentTest);
+    currentThread = new NovenaTestEngineThread(currentTest);
     QObject::connect(currentThread, SIGNAL(finished()),
                      this, SLOT(cleanupCurrentTest()));
     currentThread->start();

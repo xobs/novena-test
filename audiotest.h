@@ -1,8 +1,8 @@
 #ifndef AUDIOTEST_H
 #define AUDIOTEST_H
-#include "kovantest.h"
+#include "novenatest.h"
 
-class AudioTest : public KovanTest
+class AudioTest : public NovenaTest
 {
 	Q_OBJECT
 public:

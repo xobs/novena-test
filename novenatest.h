@@ -1,16 +1,16 @@
-#ifndef KOVANTEST_H
-#define KOVANTEST_H
+#ifndef NOVENATEST_H
+#define NOVENATEST_H
 
 #include <QString>
 #include <QObject>
 
-class KovanTestEngine;
+class NovenaTestEngine;
 
 #define TEST_ERROR 1
 #define TEST_INFO 0
 #define TEST_DEBUG 2
 
-class KovanTest : public QObject
+class NovenaTest : public QObject
 {
     Q_OBJECT
 
@@ -18,13 +18,13 @@ private:
     int testNumber;
     QString *lastString;
     int lastResult;
-    KovanTestEngine *engine;
+    NovenaTestEngine *engine;
 
 protected:
     QString *name;
 
 public:
-    KovanTest();
+    NovenaTest();
     virtual void runTest() = 0;
 
     /* Called by the engine after a test has finished running */
@@ -32,14 +32,17 @@ public:
     int getStatusValue();
 
     /* Used for issuing callbacks */
-    void setEngine(KovanTestEngine *engie);
+    void setEngine(NovenaTestEngine *engie);
 
     /* Tells this test what its position is */
     void setTestNumber(int number);
     QString *testName();
 
+    void testInfo(const QString string);
+    void testError(const QString string);
+
 signals:
-    void testStateUpdated(int level, int value, QString *message);
+    void testStateUpdated(int level, int value, QString message);
 };
 
-#endif // KOVANTEST_H
+#endif // NOVENATEST_H

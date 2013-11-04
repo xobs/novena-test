@@ -1,25 +1,25 @@
-#ifndef KOVANTESTENGINE_H
-#define KOVANTESTENGINE_H
+#ifndef NOVENATESTENGINE_H
+#define NOVENATESTENGINE_H
 
 #include <QObject>
 #include <QVector>
 #include <QVectorIterator>
-#include "kovantest.h"
-class KovanTestWindow;
-class KovanTestEngineThread;
+#include "novenatest.h"
+class NovenaTestWindow;
+class NovenaTestEngineThread;
 
-class KovanTestEngine : public QObject
+class NovenaTestEngine : public QObject
 {
     Q_OBJECT
 
 private:
-	QList<KovanTest *> tests;
-	QList<KovanTest *>testsToRun;
+	QList<NovenaTest *> tests;
+	QList<NovenaTest *>testsToRun;
 
-	KovanTest *currentTest;
+	NovenaTest *currentTest;
     int currentTestNumber;
-    KovanTestWindow *ui;
-    KovanTestEngineThread *currentThread;
+    NovenaTestWindow *ui;
+    NovenaTestEngineThread *currentThread;
 	int errorCount;
 	bool debugMode;
 	bool serialRead;
@@ -27,12 +27,12 @@ private:
 	void updateSerialNumber();
 
 public:
-    KovanTestEngine(KovanTestWindow *ui);
+    NovenaTestEngine(NovenaTestWindow *ui);
 	void setDebug(bool on);
 	bool loadAllTests();
 	bool runAllTests();
-	bool runSelectedTests(QList<KovanTest *> &tests);
-	const QList<KovanTest *> & allTests();
+	bool runSelectedTests(QList<NovenaTest *> &tests);
+	const QList<NovenaTest *> & allTests();
 
 	bool runNextTest(int continueOnErrors = 0);
 	bool debugModeOn();
@@ -44,8 +44,8 @@ public slots:
        @param value - An error code.  0 for success.
        @param message - An informative message to put up.
     */
-    void updateTestState(int level, int value, QString *message);
+    void updateTestState(int level, int value, const QString message);
     void cleanupCurrentTest(void);
 };
 
-#endif // KOVANTESTENGINE_H
+#endif // NOVENATESTENGINE_H

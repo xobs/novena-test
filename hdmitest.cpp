@@ -24,8 +24,8 @@ static const uint8_t zerobytes_6slx45csg324[] =
 #include "zerobytes-6slx45csg324.h"
 ;
 
-#define LX9_FIRMWARE "/lib/firmware/kovan-lx9.bit"
-#define LX45_FIRMWARE "/lib/firmware/kovan-lx45.bit"
+#define LX9_FIRMWARE "/lib/firmware/novena-lx9.bit"
+#define LX45_FIRMWARE "/lib/firmware/novena-lx45.bit"
 
 #define LX45_JTAG 0x34008093
 #define LX9_JTAG 0x24001093
@@ -174,8 +174,8 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	}
 
 	if (*bfr != 'b') {
-		QString *str = new QString();
-		str->sprintf("Unexpected key: wanted 'b', got '%c' (0x%02x)", *bfr, *bfr);
+        QString str;
+        str.sprintf("Unexpected key: wanted 'b', got '%c' (0x%02x)", *bfr, *bfr);
 		emit testStateUpdated(TEST_ERROR, 0, str);
 		return;
 	}
@@ -192,8 +192,8 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	size -= length;
 	
 	if (*bfr != 'c') {
-		QString *str = new QString();
-		str->sprintf("Unexpected key: wanted 'c', got '%c' (0x%02x)", *bfr, *bfr);
+        QString str;
+        str.sprintf("Unexpected key: wanted 'c', got '%c' (0x%02x)", *bfr, *bfr);
 		emit testStateUpdated(TEST_ERROR, 0, str);
 		return;
 	}
@@ -210,8 +210,8 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	size -= length;
 	
 	if (*bfr != 'd') {
-		QString *str = new QString();
-		str->sprintf("Unexpected key: wanted 'd', got '%c' (0x%02x)", *bfr, *bfr);
+        QString str;
+        str.sprintf("Unexpected key: wanted 'd', got '%c' (0x%02x)", *bfr, *bfr);
 		emit testStateUpdated(TEST_ERROR, 0, str);
 		return;
 	}
@@ -228,8 +228,8 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	size -= length;
 	
 	if (*bfr != 'e') {
-		QString *str = new QString();
-		str->sprintf("Unexpected key: wanted 'e', got '%c' (0x%02x)", *bfr, *bfr);
+        QString str;
+        str.sprintf("Unexpected key: wanted 'e', got '%c' (0x%02x)", *bfr, *bfr);
 		emit testStateUpdated(TEST_ERROR, 0, str);
 		return;
 	}
@@ -243,24 +243,24 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 
 	int fd = open("/dev/fpga", O_RDWR);
 	if (-1 == fd) {
-		emit testStateUpdated(TEST_ERROR, 0, new QString("Unable to open /dev/fpga"));
+        emit testStateUpdated(TEST_ERROR, 0, QString("Unable to open /dev/fpga"));
 		return;
 	}
 
 	if (ioctl(fd, FPGA_IOCRESET, NULL) < 0) {
-		emit testStateUpdated(TEST_ERROR, 0, new QString("Unable to reset FPGA"));
+        emit testStateUpdated(TEST_ERROR, 0, QString("Unable to reset FPGA"));
 		close(fd);
 		return;
 	}
 
 	if (write(fd, bfr, size) != size) {
-		emit testStateUpdated(TEST_ERROR, 0, new QString("Unable to write firmware"));
+        emit testStateUpdated(TEST_ERROR, 0, QString("Unable to write firmware"));
 		close(fd);
 		return;
 	}
 	close(fd);
 
-	emit testStateUpdated(TEST_INFO, 0, new QString("HDMI FPGA firmware loaded"));
+    emit testStateUpdated(TEST_INFO, 0, QString("HDMI FPGA firmware loaded"));
 
 	return;
 }
@@ -339,14 +339,14 @@ void HDMITest::loadTestFirmware()
 	else {
 		QString str;
 		str.sprintf("Unrecognized FPGA JTAG: 0x%08x", idcode);
-		qDebug() << str.toAscii();
+        qDebug() << str;
 		return;
 	}
 #endif
 }
 
 void HDMITest::runTest() {
-    QString *str;
+    QString str;
     int fd;
 
 	loadTestFirmware();
@@ -357,18 +357,18 @@ void HDMITest::runTest() {
     struct input_event e;
 
     if (-1 == fd) {
-        str = new QString("Unable to open switch: ");
-        str->append(strerror(errno));
+        str = "Unable to open switch: ";
+        str.append(strerror(errno));
         emit testStateUpdated(TEST_ERROR, 0, str);
         return;
     }
 
-    str = new QString("Please press the side switch if the pattern appears");
+    str = "Please press the side switch if the pattern appears";
     emit testStateUpdated(TEST_INFO, 0, str);
 
     if (read(fd, &e, sizeof(e)) != sizeof(e)) {
-        str = new QString("Unable to read switch: ");
-        str->append(strerror(errno));
+        str = "Unable to read switch: ";
+        str.append(strerror(errno));
         emit testStateUpdated(TEST_ERROR, 0, str);
         close(fd);
         return;
@@ -377,11 +377,11 @@ void HDMITest::runTest() {
     close(fd);
 
 
-    str = new QString("Side switch OK");
+    str = "Side switch OK";
     emit testStateUpdated(TEST_INFO, 0, str);
 
 #else
-	str = new QString("Skipping HDMI tests on this platform");
+    str = "Skipping HDMI tests on this platform";
 	emit testStateUpdated(TEST_INFO, 0, str);
 #endif
 

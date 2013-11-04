@@ -12,14 +12,14 @@ public:
 };
 
 
-DelayedTextPrintTest::DelayedTextPrintTest(QString *message, double delay)
+DelayedTextPrintTest::DelayedTextPrintTest(QString msg, double delay)
+    : message(msg)
 {
-    this->message = message;
     this->duration = delay;
     name = new QString("Text delay");
 }
 
 void DelayedTextPrintTest::runTest() {
-    emit testStateUpdated(0, 0, new QString(*message));
-    SleeperThread::msleep(duration*1000);
+    emit testStateUpdated(0, 0, message);
+    SleeperThread::msleep(duration * 1000);
 }

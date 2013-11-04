@@ -1,8 +1,8 @@
 #ifndef SWITCHTEST_H
 #define SWITCHTEST_H
-#include "kovantest.h"
+#include "novenatest.h"
 
-class SwitchTest : public KovanTest
+class SwitchTest : public NovenaTest
 {
 	Q_OBJECT
 public:

@@ -1,16 +1,16 @@
 #ifndef DELAYEDTEXTPRINTTEST_H
 #define DELAYEDTEXTPRINTTEST_H
-#include "kovantest.h"
+#include "novenatest.h"
 
-class DelayedTextPrintTest : public KovanTest
+class DelayedTextPrintTest : public NovenaTest
 {
 	Q_OBJECT
 public:
-    DelayedTextPrintTest(QString *message, double delay);
+    DelayedTextPrintTest(QString message, double delay);
     void runTest();
 
 private:
-    QString *message;
+    const QString message;
     double duration;
 };
 

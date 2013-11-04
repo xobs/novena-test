@@ -1,24 +1,24 @@
-#ifndef KOVANTESTWINDOW_H
-#define KOVANTESTWINDOW_H
+#ifndef NOVENATESTWINDOW_H
+#define NOVENATESTWINDOW_H
 
 #include <QMainWindow>
 #include <QListWidgetItem>
 #include <QFile>
-#include "kovantestengine.h"
+#include "novenatestengine.h"
 
 const char SEQUENCE[] = "132231";
 
 namespace Ui {
-class KovanTestWindow;
+class NovenaTestWindow;
 }
 
-class KovanTestWindow : public QMainWindow
+class NovenaTestWindow : public QMainWindow
 {
     Q_OBJECT
     
 public:
-    explicit KovanTestWindow(QWidget *parent = 0);
-    ~KovanTestWindow();
+    explicit NovenaTestWindow(QWidget *parent = 0);
+    ~NovenaTestWindow();
     void setStatusText(QString *message);
     void setProgressBar(double progress);
     void setProgressText(QString &text);
@@ -27,8 +27,8 @@ public:
 	void finishTests(bool successful);
 
 private:
-    Ui::KovanTestWindow *ui;
-    KovanTestEngine *engine;
+    Ui::NovenaTestWindow *ui;
+    NovenaTestEngine *engine;
 	QString errorString;
 	unsigned int sequencePosition;
 	QString serialLabelString;
@@ -49,4 +49,4 @@ public slots:
 	void moveToMainScreen();
 };
 
-#endif // KOVANTESTWINDOW_H
+#endif // NOVENATESTWINDOW_H

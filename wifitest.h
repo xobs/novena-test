@@ -1,10 +1,12 @@
 #ifndef WIFITEST_H
 #define WIFITEST_H
 
-#include "kovantest.h"
-#include <Qt/QtNetwork>
+#include <QNetworkReply>
+#include <QCryptographicHash>
+#include <QFile>
+#include "novenatest.h"
 
-class WifiTest : public KovanTest
+class WifiTest : public NovenaTest
 {
     Q_OBJECT
 

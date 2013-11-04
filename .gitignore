@@ -3,5 +3,5 @@
 Makefile
 moc*
 ui_*.h
-kovan-test
-kovan-test.pro.user
+novena-test
+novena-test.pro.user
