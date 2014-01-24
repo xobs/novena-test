@@ -174,9 +174,7 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	}
 
 	if (*bfr != 'b') {
-        QString str;
-        str.sprintf("Unexpected key: wanted 'b', got '%c' (0x%02x)", *bfr, *bfr);
-		emit testStateUpdated(TEST_ERROR, 0, str);
+        testError(QString("Unexpected key: wanted 'b', got '%1'").arg(*bfr));
 		return;
 	}
 	bfr++;
@@ -192,10 +190,8 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	size -= length;
 	
 	if (*bfr != 'c') {
-        QString str;
-        str.sprintf("Unexpected key: wanted 'c', got '%c' (0x%02x)", *bfr, *bfr);
-		emit testStateUpdated(TEST_ERROR, 0, str);
-		return;
+        testError(QString("Unexpected key: wanted 'c', got '%1'").arg(*bfr));
+        return;
 	}
 	bfr++;
 	size--;
@@ -210,9 +206,7 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	size -= length;
 	
 	if (*bfr != 'd') {
-        QString str;
-        str.sprintf("Unexpected key: wanted 'd', got '%c' (0x%02x)", *bfr, *bfr);
-		emit testStateUpdated(TEST_ERROR, 0, str);
+        testError(QString("Unexpected key: wanted 'd', got '%1'").arg(*bfr));
 		return;
 	}
 	bfr++;
@@ -228,10 +222,8 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 	size -= length;
 	
 	if (*bfr != 'e') {
-        QString str;
-        str.sprintf("Unexpected key: wanted 'e', got '%c' (0x%02x)", *bfr, *bfr);
-		emit testStateUpdated(TEST_ERROR, 0, str);
-		return;
+        testError(QString("Unexpected key: wanted 'e', got '%1'").arg(*bfr));
+        return;
 	}
 	bfr++;
 	size--;
@@ -243,24 +235,24 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 
 	int fd = open("/dev/fpga", O_RDWR);
 	if (-1 == fd) {
-        emit testStateUpdated(TEST_ERROR, 0, QString("Unable to open /dev/fpga"));
+        testError("Unable to open /dev/fpga");
 		return;
 	}
 
 	if (ioctl(fd, FPGA_IOCRESET, NULL) < 0) {
-        emit testStateUpdated(TEST_ERROR, 0, QString("Unable to reset FPGA"));
+        testError("Unable to reset FPGA");
 		close(fd);
 		return;
 	}
 
 	if (write(fd, bfr, size) != size) {
-        emit testStateUpdated(TEST_ERROR, 0, QString("Unable to write firmware"));
+        testError("Unable to write firmware");
 		close(fd);
 		return;
 	}
 	close(fd);
 
-    emit testStateUpdated(TEST_INFO, 0, QString("HDMI FPGA firmware loaded"));
+    testInfo("HDMI FPGA firmware loaded");
 
 	return;
 }
@@ -268,7 +260,7 @@ void HDMITest::loadFpgaFirmware(const uint8_t *bfr, ssize_t size) {
 
 HDMITest::HDMITest()
 {
-    name = new QString("HDMI Test");
+    name = "HDMI Test";
 	loadDefaultFirmware();
 }
 
@@ -346,7 +338,6 @@ void HDMITest::loadTestFirmware()
 }
 
 void HDMITest::runTest() {
-    QString str;
     int fd;
 
 	loadTestFirmware();
@@ -357,32 +348,23 @@ void HDMITest::runTest() {
     struct input_event e;
 
     if (-1 == fd) {
-        str = "Unable to open switch: ";
-        str.append(strerror(errno));
-        emit testStateUpdated(TEST_ERROR, 0, str);
+        testError(QString("Unable to open switch: %1").arg(strerror(errno)));
         return;
     }
 
-    str = "Please press the side switch if the pattern appears";
-    emit testStateUpdated(TEST_INFO, 0, str);
+    testInfo("Please press the side switch if the pattern appears");
 
     if (read(fd, &e, sizeof(e)) != sizeof(e)) {
-        str = "Unable to read switch: ";
-        str.append(strerror(errno));
-        emit testStateUpdated(TEST_ERROR, 0, str);
+        testError(QString("Unable to read switch: %1").arg(strerror(errno)));
         close(fd);
         return;
     }
 
     close(fd);
 
-
-    str = "Side switch OK";
-    emit testStateUpdated(TEST_INFO, 0, str);
-
+    testInfo("Side switch OK");
 #else
-    str = "Skipping HDMI tests on this platform";
-	emit testStateUpdated(TEST_INFO, 0, str);
+    testInfo("Skipping HDMI tests on this platform");
 #endif
 
 	loadDefaultFirmware();

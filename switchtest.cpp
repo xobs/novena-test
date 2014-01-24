@@ -12,7 +12,7 @@
 
 SwitchTest::SwitchTest()
 {
-    name = new QString("Switch test");
+    name = "Switch test";
 }
 
 void SwitchTest::runTest() {
@@ -22,31 +22,23 @@ void SwitchTest::runTest() {
     struct input_event e;
 
     if (-1 == fd) {
-        str = QString("Unable to open switch: ");
-        str.append(strerror(errno));
-        emit testStateUpdated(TEST_ERROR, 0, str);
+        testError(QString("Unable to open switch: %1").arg(strerror(errno)));
         return;
     }
 
-    str = QString("Please press the side switch");
-    emit testStateUpdated(TEST_INFO, 0, str);
+    testInfo("Please press the side switch");
 
     if (read(fd, &e, sizeof(e)) != sizeof(e)) {
-        str = QString("Unable to read switch: ");
-        str.append(strerror(errno));
-        emit testStateUpdated(TEST_ERROR, 0, str);
+        testError(QString("Unable to read switch: %1").arg(strerror(errno)));
         close(fd);
         return;
     }
 
     close(fd);
 
-
-    str = QString("Side switch OK");
-    emit testStateUpdated(TEST_INFO, 0, str);
+    testInfo("Side switch OK");
 #else
-    str = QString("Switch test skipped on this platform");
-    emit testStateUpdated(TEST_INFO, 0, str);
+    testInfo("Switch test skipped on this platform");
 #endif
 
     return;

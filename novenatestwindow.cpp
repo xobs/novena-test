@@ -212,7 +212,7 @@ void NovenaTestWindow::moveToDebugScreen()
 	int i;
 	ui->testListWidget->clear();
 	for (i=0; i<tests.count(); i++) {
-		QListWidgetItem *item = new QListWidgetItem(*(tests.at(i)->testName()));
+        QListWidgetItem *item = new QListWidgetItem(tests.at(i)->testName());
 		QVariant v = QVariant::fromValue<void*>(tests.at(i));
 		item->setData(Qt::UserRole, v);
 		item->setSizeHint(QSize(320,30));
@@ -254,9 +254,9 @@ void NovenaTestWindow::startTests()
 	engine->runAllTests();
 }
 
-void NovenaTestWindow::setStatusText(QString *message)
+void NovenaTestWindow::setStatusText(QString message)
 {
-    ui->statusLabel->setText(*message);
+    ui->statusLabel->setText(message);
     return;
 }
 

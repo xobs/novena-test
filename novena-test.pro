@@ -7,6 +7,7 @@
 QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+lessThan(QT_MAJOR_VERSION, 5): LIBS += -lqjson
 
 TARGET = novena-test
 TEMPLATE = app
@@ -22,7 +23,10 @@ SOURCES += main.cpp\
     novenatestwindow.cpp \
     novenatestengine.cpp \
     novenatest.cpp \
-    mmctest.cpp
+    mmctest.cpp \
+    eepromtest.cpp \
+    netperftest.cpp \
+    usbtest.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -42,7 +46,10 @@ HEADERS  += novenatestwindow.h \
     hdmitest.h \
     wifitest.h \
     fpga.h \
-    mmctest.h
+    mmctest.h \
+    eepromtest.h \
+    netperftest.h \
+    usbtest.h
 
 FORMS    += novenatestwindow.ui
 

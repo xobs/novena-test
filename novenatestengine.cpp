@@ -20,7 +20,7 @@ public:
     void run() {
         tst->runTest();
     };
-    QString *testName() {
+    const QString testName() {
         return tst->testName();
     }
 };
@@ -71,14 +71,17 @@ const QString &NovenaTestEngine::serialNumber() {
 
 bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
-    tests.append(new MMCTest());
+    tests.append(new MMCTestStart("/home/xobs/Documents/images/quantum-biosys.tar.gz",
+                                  "/home/xobs/Code/u-boot-imx6/u-boot.imx",
+                                  MMCCopyThread::getExternalBlockName()));
+    tests.append(new MMCTestFinish());
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
 
 	/* Wire up all signals and slots */
 	int i;
 	for (i=0; i<tests.count(); i++)
-        connect(tests.at(i), SIGNAL(testStateUpdated(int,int,QString)),
-                this, SLOT(updateTestState(int,int,QString)));
+        connect(tests.at(i), SIGNAL(testStateUpdated(QString,int,int,QString)),
+                this, SLOT(updateTestState(QString,int,int,QString)));
 
     return true;
 }
@@ -111,7 +114,7 @@ static const char *levelStr[] = {
     "<font color=\"green\">DEBUG</font>",
 };
 
-void NovenaTestEngine::updateTestState(int level, int value, const QString message)
+void NovenaTestEngine::updateTestState(const QString name, int level, int value, const QString message)
 {
 
 	QString str;
@@ -122,18 +125,18 @@ void NovenaTestEngine::updateTestState(int level, int value, const QString messa
     ui->addTestLog(str);
 
     if (level == TEST_INFO)
-        qDebug() << "INFO:" << level << value << message.toLatin1();
+        qDebug() << name << "INFO:" << value << message;
 	else if (level == TEST_ERROR) {
-        qDebug() << "ERROR:" << level << value << message.toLatin1();
+        qDebug() << name << "ERROR:" << value << message;
 		errorCount++;
 		QString str;
 		str.append(testsToRun.at(currentTestNumber)->testName());
 		ui->setErrorString(str);
 	}
     else if (level == TEST_DEBUG)
-        qDebug() << "DEBUG:" << level << value << message.toLatin1();
+        qDebug() << name << "DEBUG:" << value << message;
     else
-        qDebug() << "????:" << level << value << message.toLatin1();
+        qDebug() << name << "????:" << level << value << message;
 }
 
 
@@ -153,6 +156,7 @@ bool NovenaTestEngine::runNextTest(int continueOnErrors)
 		QString str;
 		str.append(testsToRun.at(currentTestNumber)->testName());
 		ui->finishTests(false);
+        emit testsFinished();
 		return false;
 	}
 

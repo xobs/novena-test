@@ -19,7 +19,7 @@ class NovenaTestWindow : public QMainWindow
 public:
     explicit NovenaTestWindow(QWidget *parent = 0);
     ~NovenaTestWindow();
-    void setStatusText(QString *message);
+    void setStatusText(QString message);
     void setProgressBar(double progress);
     void setProgressText(QString &text);
 	void setErrorString(QString &message);

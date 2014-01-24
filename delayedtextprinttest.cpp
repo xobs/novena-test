@@ -16,10 +16,10 @@ DelayedTextPrintTest::DelayedTextPrintTest(QString msg, double delay)
     : message(msg)
 {
     this->duration = delay;
-    name = new QString("Text delay");
+    name = "Text, with delay";
 }
 
 void DelayedTextPrintTest::runTest() {
-    emit testStateUpdated(0, 0, message);
+    testInfo(message);
     SleeperThread::msleep(duration * 1000);
 }

@@ -6,7 +6,6 @@ NovenaTest::NovenaTest()
     lastString = NULL;
     lastResult = 0;
     engine = NULL;
-    name = new QString("Base test");
 }
 
 QString *NovenaTest::getStatusString()
@@ -29,17 +28,22 @@ void NovenaTest::setEngine(NovenaTestEngine *engie)
     engine = engie;
 }
 
-QString *NovenaTest::testName()
+const QString NovenaTest::testName()
 {
     return name;
 }
 
 void NovenaTest::testInfo(const QString string)
 {
-    emit testStateUpdated(TEST_INFO, 0, string);
+    emit testStateUpdated(testName(), TEST_INFO, 0, string);
 }
 
 void NovenaTest::testError(const QString string)
 {
-    emit testStateUpdated(TEST_ERROR, 0, string);
+    emit testStateUpdated(testName(), TEST_ERROR, 0, string);
+}
+
+void NovenaTest::testDebug(const QString string)
+{
+    emit testStateUpdated(testName(), TEST_DEBUG, 0, string);
 }

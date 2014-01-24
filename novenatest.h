@@ -21,7 +21,7 @@ private:
     NovenaTestEngine *engine;
 
 protected:
-    QString *name;
+    QString name;
 
 public:
     NovenaTest();
@@ -36,13 +36,15 @@ public:
 
     /* Tells this test what its position is */
     void setTestNumber(int number);
-    QString *testName();
+    const QString testName();
 
+public slots:
     void testInfo(const QString string);
     void testError(const QString string);
+    void testDebug(const QString string);
 
 signals:
-    void testStateUpdated(int level, int value, QString message);
+    void testStateUpdated(const QString name, int level, int value, QString message);
 };
 
 #endif // NOVENATEST_H

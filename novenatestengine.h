@@ -44,8 +44,11 @@ public slots:
        @param value - An error code.  0 for success.
        @param message - An informative message to put up.
     */
-    void updateTestState(int level, int value, const QString message);
+    void updateTestState(const QString name, int level, int value, const QString message);
     void cleanupCurrentTest(void);
+
+signals:
+    void testsFinished();
 };
 
 #endif // NOVENATESTENGINE_H

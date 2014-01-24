@@ -2,7 +2,7 @@
 
 AudioTest::AudioTest()
 {
-    name = new QString("Audio");
+    name = "Audio";
 }
 
 void AudioTest::runTest() {
