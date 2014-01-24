@@ -124,7 +124,7 @@ int USBTest::testUSB(struct usb_descr *desc)
     }
 
     /* Run tests */
-    for (testnum=0; testnum<=10; testnum++) {
+    for (testnum = 0; testnum < 10; testnum++) {
         struct usbdevfs_ioctl params;
         struct usbtest_param p;
 
@@ -137,7 +137,7 @@ int USBTest::testUSB(struct usb_descr *desc)
         p.sglen = 32;
         params.data = &p;
 
-        testInfo(QString("Running USB test %1/11").arg(testnum + 1));
+        testInfo(QString("Running USB test %1/10").arg(testnum + 1));
         if (ioctl(fd, USBDEVFS_IOCTL, &params) < 0) {
             testError(QString("Unable to run test %1: %2").arg(testnum).arg(strerror(errno)));
             ret = 2;
@@ -162,7 +162,7 @@ int USBTest::initModule(const char *modname)
     QString path;
     uname(&ver);
 
-    testDebu(QString("Kernel release: %1  Module: %2").arg(ver.release).arg(modname));
+    testDebug(QString("Kernel release: %1  Module: %2").arg(ver.release).arg(modname));
     path = QString("/lib/modules/%1/%2").arg(ver.release).arg(modname);
 
     fd = open(path.toUtf8(), O_RDONLY);

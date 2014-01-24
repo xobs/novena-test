@@ -26,7 +26,9 @@ SOURCES += main.cpp\
     mmctest.cpp \
     eepromtest.cpp \
     netperftest.cpp \
-    usbtest.cpp
+    usbtest.cpp \
+    fpgatest.cpp \
+    waitfornetwork.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -49,7 +51,9 @@ HEADERS  += novenatestwindow.h \
     mmctest.h \
     eepromtest.h \
     netperftest.h \
-    usbtest.h
+    usbtest.h \
+    fpgatest.h \
+    waitfornetwork.h
 
 FORMS    += novenatestwindow.ui
 

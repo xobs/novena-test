@@ -301,7 +301,7 @@ void EEPROMStart::runTest()
     }
 
 
-    testInfo("Checking out serial and MAC address");
+    testInfo(QString() + "Checking out serial and MAC address from " + _url);
 
     QNetworkAccessManager *manager = new QNetworkAccessManager(this->parent());
 
@@ -321,6 +321,11 @@ void EEPROMStart::runTest()
 
     testDebug("Waiting for data...");
     QByteArray data = reply->readAll();
+
+    if (data.length() < 5) {
+        testError("No reply from server");
+        return;
+    }
 
     testDebug(QString("JSON data: %1").arg(QString(data)));
 
@@ -403,6 +408,10 @@ void EEPROMFinish::runTest()
 
     testDebug("Waiting for data...");
     QByteArray data = reply->readAll();
+    if (data.length() < 5) {
+        testError("No reply from server");
+        return;
+    }
 
     testDebug(QString("JSON data: %1").arg(QString(data)));
 

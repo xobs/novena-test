@@ -42,9 +42,9 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 	ui->startTestsButton->setVisible(false);
 	ui->lookingForUSBLabel->setVisible(true);
 
-//#ifdef linux
-//	showFullScreen();
-//#endif
+#ifdef linux
+    showFullScreen();
+#endif
 
     engine = new NovenaTestEngine(this);
     engine->loadAllTests();
@@ -79,6 +79,7 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 	ui->startTestsButton->setVisible(true);
 	ui->lookingForUSBLabel->setVisible(false);
 
+    startTests();
 }
 
 void NovenaTestWindow::openLogFile()

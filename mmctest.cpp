@@ -324,7 +324,7 @@ void MMCCopyThread::run()
 
 MMCTestStart::MMCTestStart(QString src, QString bl, QString dst)
 {
-    name = "MMC test start";
+    name = "MMC imaging";
     copyThread = new MMCCopyThread(src, bl, dst);
 
     connect(copyThread, SIGNAL(copyError(QString)),
@@ -355,7 +355,7 @@ void MMCTestStart::runTest()
 
 MMCTestFinish::MMCTestFinish()
 {
-    name = "MMC test finish";
+    name = "Finalizing MMC";
 }
 
 void MMCTestFinish::runTest()

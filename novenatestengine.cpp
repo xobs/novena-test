@@ -8,6 +8,11 @@
 /* Available Tests */
 #include "delayedtextprinttest.h"
 #include "mmctest.h"
+#include "usbtest.h"
+#include "fpgatest.h"
+#include "netperftest.h"
+#include "eepromtest.h"
+#include "waitfornetwork.h"
 
 class NovenaTest;
 class NovenaTestEngineThread : public QThread {
@@ -71,10 +76,16 @@ const QString &NovenaTestEngine::serialNumber() {
 
 bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
-    tests.append(new MMCTestStart("/home/xobs/Documents/images/quantum-biosys.tar.gz",
-                                  "/home/xobs/Code/u-boot-imx6/u-boot.imx",
-                                  MMCCopyThread::getExternalBlockName()));
+    tests.append(new MMCTestStart("/factory/quantum-biosys.tar.gz",
+                                  "/factory/u-boot-internal.imx",
+                                  MMCCopyThread::getInternalBlockName()));
+    tests.append(new WaitForNetwork());
+    tests.append(new EEPROMStart("http://192.168.100.11:8000/getnew/", "es8328,pcie,gbit,hdmi"));
+    tests.append(new USBTest());
+    tests.append(new FpgaTest());
+    //tests.append(new NetPerfTest());
     tests.append(new MMCTestFinish());
+    tests.append(new EEPROMFinish("http://192.168.100.11:8000/assign/by-serial/%1/"));
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
 
 	/* Wire up all signals and slots */
