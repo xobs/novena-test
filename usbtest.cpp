@@ -16,8 +16,8 @@
 
 #define CONFIGFS_PATH "kernel/fs/configfs/configfs.ko"
 #define LIBCOMPOSITE_PATH "kernel/drivers/usb/gadget/libcomposite.ko"
-#define USB_F_SS_LB_PATH "kernel/drivers/usb/gadget/usb_f_ss_lb.ko"
-#define G_ZERO_PATH "kernel/drivers/usb/gadget/g_zero.ko"
+#define USB_F_SS_LB_PATH "kernel/drivers/usb/gadget/function/usb_f_ss_lb.ko"
+#define G_ZERO_PATH "kernel/drivers/usb/gadget/legacy/g_zero.ko"
 #define USBTEST_PATH "kernel/drivers/usb/misc/usbtest.ko"
 #define USB_PATH "/sys/bus/usb/devices"
 
