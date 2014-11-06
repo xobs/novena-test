@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     usbtest.cpp \
     fpgatest.cpp \
     waitfornetwork.cpp \
-    playmp3.cpp
+    playmp3.cpp \
+    hwclocktest.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -55,7 +56,8 @@ HEADERS  += novenatestwindow.h \
     usbtest.h \
     fpgatest.h \
     waitfornetwork.h \
-    playmp3.h
+    playmp3.h \
+    hwclocktest.h
 
 FORMS    += novenatestwindow.ui
 
