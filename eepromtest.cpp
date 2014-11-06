@@ -32,73 +32,20 @@
 
 #endif
 #include "eepromtest.h"
-
-struct novena_eeprom_data {
-        uint8_t         signature[6];   /* 'Novena' */
-        uint8_t         version;        /* 1 */
-        uint8_t         reserved1;
-        uint32_t        serial;
-        uint8_t         mac[6];
-        uint16_t        features;
-} __attribute__((__packed__));
-
-struct feature {
-        uint32_t        flags;
-        const char      *name;
-        const char      *descr;
-};
-
-struct feature features[] = {
-        {
-                /*.flags =*/ 0x01,
-                /*.name  =*/ "es8328",
-                /*.descr =*/ "ES8328 audio codec",
-        },
-        {
-                /*.flags =*/ 0x02,
-                /*.name  =*/ "senoko",
-                /*.descr =*/ "Senoko battery board",
-        },
-        {
-                /*.flags =*/ 0x04,
-                /*.name  =*/ "retina",
-                /*.descr =*/ "Retina-class dual-LVDS display",
-        },
-        {
-                /*.flags =*/ 0x08,
-                /*.name  =*/ "pixelqi",
-                /*.descr =*/ "PixelQi LVDS display",
-        },
-        {
-                /*.flags =*/ 0x10,
-                /*.name  =*/ "pcie",
-                /*.descr =*/ "PCI Express support",
-        },
-        {
-                /*.flags =*/ 0x20,
-                /*.name  =*/ "gbit",
-                /*.descr =*/ "Gigabit Ethernet",
-        },
-        {
-                /*.flags =*/ 0x40,
-                /*.name  =*/ "hdmi",
-                /*.descr =*/ "HDMI Output",
-        },
-        {0, 0, 0} /* Sentinal */
-};
+#include "novena-eeprom.h"
 
 struct eeprom_dev {
     /* File handle to I2C bus */
-    int				fd;
+    int fd;
 
     /* I2C address of the EEPROM */
-    int				addr;
+    int addr;
 
     /* True, if we've read the contents of eeprom */
-    int				cached;
+    int cached;
 
     /* Contents of the EEPROM */
-    struct novena_eeprom_data 	data;
+    struct novena_eeprom_data_v2 data;
 };
 
 
@@ -118,7 +65,7 @@ static int parse_features(const char *str) {
          word;
          word = strtok_r(NULL, sep, &ctx)) {
 
-        struct feature *feature = features;
+        const struct feature *feature = features;
         while (feature->name) {
             if (!strcmp(feature->name, word)) {
                 flags |= feature->flags;
@@ -299,7 +246,6 @@ void EEPROMStart::runTest()
         return;
     }
 
-
     testInfo(QString() + "Checking out serial and MAC address from " + _url);
 
     QNetworkAccessManager *manager = new QNetworkAccessManager(this->parent());
@@ -366,17 +312,47 @@ void EEPROMStart::runTest()
     g_serial = new QString(map["Serial"].toString());
 
     memcpy(&dev->data.mac, new_mac, sizeof(new_mac));
-    dev->data.serial = map["Serial"].toInt();
-    dev->data.features = feat;
-    memcpy(&dev->data.signature, NOVENA_SIGNATURE, sizeof(dev->data.signature));
-    dev->data.version = NOVENA_VERSION;
 
+    dev->data.serial = map["Serial"].toInt();
+
+    dev->data.features = feat;
+
+    dev->data.eepromoops_offset = 4096;
+    dev->data.eepromoops_length = 61440;
+
+    dev->data.eeprom_size = 65536;
+    dev->data.page_size = 128;
+
+    if (dev->data.features & feature_retina) {
+        dev->data.lvds1.frequency = 148500000;
+        dev->data.lvds1.hactive = 1920;
+        dev->data.lvds1.vactive = 1080;
+        dev->data.lvds1.hback_porch = 148;
+        dev->data.lvds1.hfront_porch = 88;
+        dev->data.lvds1.hsync_len = 44;
+        dev->data.lvds1.vback_porch = 36;
+        dev->data.lvds1.vfront_porch = 4;
+        dev->data.lvds1.vsync_len = 5;
+        dev->data.lvds1.flags = vsync_polarity | hsync_polarity
+                                 | data_width_8bit | mapping_jeida
+                                 | dual_channel | channel_present;
+
+        dev->data.lvds2.flags = channel_present;
+    }
+
+    if (dev->data.features & feature_hdmi) {
+        /* Pull HDMI settings from e.g. EDID */
+        dev->data.hdmi.flags = channel_present | ignore_settings
+                                | data_width_8bit;
+    }
+
+    dev->data.version = 2;
+
+    memcpy(&dev->data.signature, NOVENA_SIGNATURE, sizeof(dev->data.signature));
 
     delete reply;
     delete manager;
 }
-
-
 
 EEPROMFinish::EEPROMFinish(QString url)
 {
@@ -413,7 +389,6 @@ void EEPROMFinish::runTest()
     }
 
     testDebug(QString("JSON data: %1").arg(QString(data)));
-
 
     testDebug("Writing EEPROM data out");
     if (eeprom_write(dev)) {
