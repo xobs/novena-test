@@ -105,15 +105,14 @@ out:
 
 bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
-//    tests.append(new MMCTestStart("/factory/quantum-biosys.tar.gz",
-//                                  "/factory/u-boot-internal.imx",
-//                                  MMCCopyThread::getInternalBlockName()));
+    tests.append(new MMCTestStart("/factory/novena-mmc-disk.img",
+                                  MMCCopyThread::getInternalBlockName()));
     tests.append(new WaitForNetwork());
-//    tests.append(new EEPROMStart("http://bunniefoo.com:8675/getnew/", "es8328,pcie,gbit,hdmi"));
+    tests.append(new EEPROMStart("http://bunniefoo.com:8674/getnew/", "es8328,pcie,gbit,hdmi"));
     tests.append(new USBTest());
-//    tests.append(new FpgaTest());
-//    tests.append(new MMCTestFinish());
-//    tests.append(new EEPROMFinish("http://bunniefoo.com:8675/assign/by-serial/%1/"));
+    tests.append(new FpgaTest());
+    tests.append(new MMCTestFinish());
+    tests.append(new EEPROMFinish("http://bunniefoo.com:8674/assign/by-serial/%1/"));
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
     tests.append(new PlayMP3("/factory/test_done_nyan.mp3"));
 
