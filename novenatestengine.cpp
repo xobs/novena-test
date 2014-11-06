@@ -14,6 +14,7 @@
 #include "delayedtextprinttest.h"
 #include "mmctest.h"
 #include "usbtest.h"
+#include "hwclocktest.h"
 #include "fpgatest.h"
 #include "netperftest.h"
 #include "eepromtest.h"
@@ -108,10 +109,12 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new MMCTestStart("/factory/novena-mmc-disk.img",
                                   MMCCopyThread::getInternalBlockName()));
     tests.append(new WaitForNetwork());
+    tests.append(new HWClockTestStart());
     tests.append(new EEPROMStart("http://bunniefoo.com:8674/getnew/", "es8328,pcie,gbit,hdmi"));
     tests.append(new USBTest());
     tests.append(new FpgaTest());
     tests.append(new MMCTestFinish());
+    tests.append(new HWClockTestFinish());
     tests.append(new EEPROMFinish("http://bunniefoo.com:8674/assign/by-serial/%1/"));
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
     tests.append(new PlayMP3("/factory/test_done_nyan.mp3"));
