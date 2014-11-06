@@ -15,48 +15,7 @@
 static MMCCopyThread *copyThread;
 static QTime *timer;
 
-#define BOOT_PART_SIZE 32   /* Megabytes */
-#define ROOT_PART_SIZE 3500 /* Megabytes */
 #define MOUNT_POINT "/mnt/"
-
-struct part_entry {
-    uint8_t status;
-    uint8_t chs1;
-    uint8_t chs2;
-    uint8_t chs3;
-    uint8_t type;
-    uint8_t chs4;
-    uint8_t chs5;
-    uint8_t chs6;
-    uint32_t lba_address;
-    uint32_t lba_size;
-} __attribute__((__packed__));
-
-struct mbr {
-    uint8_t code[440]; /* 0 - 440 */
-    uint8_t disk_signature[4]; /* 440 - 444 */
-    uint8_t reserved[2]; /* 444 - 446 */
-    struct part_entry partitions[4]; /* 446 - 510 */
-    uint8_t signature[2]; /* 510 - 512 */
-} __attribute__((__packed__));
-
-static struct part_args {
-    uint32_t start;
-    uint32_t size;
-    uint32_t type;
-    uint32_t padding_pre; /* How much space to leave before the partition */
-    char *file;
-} parts[4] = {
-    {
-        .size = BOOT_PART_SIZE * 1024 * (1024 / 512),
-        .type = 0x06,
-        .padding_pre = 256 * 1024 / 512,
-    },
-    {
-        .size = ROOT_PART_SIZE * 1024 * (1024 / 512),
-        .type = 0x82,
-    },
-};
 
 #define errorOut(x) \
     do { \
@@ -65,12 +24,11 @@ static struct part_args {
     } while(0)
 
 
-MMCCopyThread::MMCCopyThread(QString src, QString bl, QString dst)
-    : outputImage(dst), inputImage(src), bootloaderImage(bl)
+MMCCopyThread::MMCCopyThread(QString src,  QString dst)
+    : outputImage(dst), inputImage(src)
 {
     source = src;
     destination = dst;
-    bootloader = bl;
 }
 
 void MMCCopyThread::infoMessage(QString msg)
@@ -83,46 +41,19 @@ void MMCCopyThread::debugMessage(QString msg)
     emit copyDebug(msg);
 }
 
-QString MMCCopyThread::getBlockName(QString mmcNumber)
-{
-    QDir mmc = QString("/sys/class/mmc_host/%1/").arg(mmcNumber);
-    QString mmcColon = QString("%1:").arg(mmcNumber);
-    QFileInfoList list = mmc.entryInfoList();
-
-    for (int i = 0; i < list.size(); ++i) {
-        QFileInfo fileInfo = list.at(i);
-        if (fileInfo.fileName().startsWith(mmcColon)) {
-            QString block = QString("%1/block/").arg(fileInfo.absoluteFilePath());
-            QDir blockDir(block);
-
-            QFileInfoList blockList = blockDir.entryInfoList();
-            for (int j = 0; j < blockList.size(); ++j) {
-                QFileInfo blockFileInfo = blockList.at(j);
-                if (blockFileInfo.fileName().startsWith("mmcblk"))
-                    return QString("/dev/%1").arg(blockFileInfo.fileName());
-            }
-        }
-    }
-    return QString();
-}
-
 QString MMCCopyThread::getInternalBlockName()
 {
-    return getBlockName("mmc1");
+    return "/dev/disk/by-path/platform-2198000.usdhc";
 }
 
 QString MMCCopyThread::getExternalBlockName()
 {
-    return getBlockName("mmc0");
+    return "/dev/disk/by-path/platform-2194000.usdhc";
 }
 
 
 int MMCCopyThread::findDevices()
 {
-    infoMessage(QString("Opening bootloader image %1").arg(bootloaderImage.fileName()));
-    if (!bootloaderImage.open(QIODevice::ReadOnly))
-        errorOut("Couldn't open bootloader image");
-
     infoMessage(QString("Opening input image %1").arg(inputImage.fileName()));
     if (!inputImage.open(QIODevice::ReadOnly))
         errorOut("Couldn't open input image file");
@@ -134,47 +65,27 @@ int MMCCopyThread::findDevices()
     return 0;
 }
 
-int MMCCopyThread::partitionDevice()
+int MMCCopyThread::extractImage()
 {
-    struct mbr mbr;
-    uint64_t running_address = 4;
-    int i;
+    qint64 ret;
+    char data[1024 * 1024];
 
-    infoMessage("Partitioning device");
+    while ((ret = inputImage.read(data, sizeof(data))) > 0) {
+        ret = outputImage.write(data, ret);
 
-    memset(&mbr, 0, sizeof(mbr));
-    mbr.signature[0] = 0x55;
-    mbr.signature[1] = 0xAA;
-
-    /* Make first partition bootable */
-    mbr.partitions[0].status = 0x80;
-
-
-    for (i = 0; i < 4; i++) {
-        if (parts[i].size || (parts[i].type == 0x05)) {
-            running_address += parts[i].padding_pre;
-            parts[i].start = running_address;
-
-            mbr.partitions[i].lba_address = parts[i].start;
-            mbr.partitions[i].lba_size = parts[i].size;
-            mbr.partitions[i].type = parts[i].type;
-
-            running_address += parts[i].size;
-        }
+        if (ret <= 0)
+            errorOut("Unable to write data");
     }
 
-    QByteArray mbrBytes((char *)&mbr, sizeof(mbr));
-    if (outputImage.write(mbrBytes) == -1)
-        errorOut("Unable to write MBR");
+    if (ret == -1)
+        errorOut("Unable to read data");
 
-    /*
-     * Write an additional 512 bytes, moving the cursor to byte 1024.
-     * This is so that when we write the bootloader later on, it ends
-     * up at the right offset.
-     */
-    QByteArray zeroes(512, 0);
-    if (outputImage.write(zeroes) == -1)
-        errorOut("Unable to pad image");
+    return 0;
+}
+
+int MMCCopyThread::updatePartitions()
+{
+    infoMessage("Updating partition table");
 
     if (!outputImage.flush())
         errorOut("Unable to sync disk");
@@ -185,60 +96,73 @@ int MMCCopyThread::partitionDevice()
     return 0;
 }
 
-int MMCCopyThread::formatDevice()
+int MMCCopyThread::resizeMBR()
 {
-    QProcess mkfs;
+    QProcess fdisk;
 
-    infoMessage("Formatting filesystems");
+    infoMessage("Resizing disk");
 
-    debugMessage("Starting mkfs.ext4");
-    mkfs.start("mkfs.ext4", QStringList() << QString("%1p2").arg(outputImage.fileName()));
-    if (!mkfs.waitForStarted())
-        errorOut("Unable to start mkfs.ext4");
+    debugMessage("Starting fdisk");
+    fdisk.start("fdisk", QStringList() << outputImage.fileName());
+    if (!fdisk.waitForStarted())
+        errorOut("Unable to start fdisk");
 
-    mkfs.closeWriteChannel();
+    fdisk.write("d\n"); /* Delete existing partition */
+    fdisk.write("3\n"); /* Partition number 3 */
+    fdisk.write("n\n"); /* New partition */
+    fdisk.write("p\n"); /* Primary type */
+    fdisk.write("3\n"); /* Partition number 3 */
+    fdisk.write(" \n"); /* Default starting offset */
+    fdisk.write(" \n"); /* Default ending offset */
+    fdisk.write("w\n"); /* Write changes to disk */
 
-    if (!mkfs.waitForFinished())
-        errorOut("mkfs.ext4 returned an error");
-
-    debugMessage("Starting mkfs.vfat");
-    mkfs.start("mkfs.vfat", QStringList() << QString("%1p1").arg(outputImage.fileName()));
-    if (!mkfs.waitForStarted())
-        errorOut("Unable to start mkfs.vfat");
-
-    mkfs.closeWriteChannel();
-
-    if (!mkfs.waitForFinished())
-        errorOut("mkfs.vfat returned an error");
+    if (!fdisk.waitForFinished())
+        errorOut("fdisk returned an error");
 
     return 0;
 }
 
-int MMCCopyThread::loadBootloader()
+int MMCCopyThread::resizeRoot()
 {
-    QByteArray bl = bootloaderImage.readAll();
+    QProcess fsck;
+    infoMessage("Checking disk");
 
-    infoMessage("Copying bootloader");
+    fsck.start("fsck.ext4", QStringList() << "-y" << QString("%1-part3").arg(outputImage.fileName()));
 
-    if (bl.size() < 16384)
-        errorOut(QString("Bootloader data is suspiciously small, at %1 bytes").arg(bl.size()));
+    if (!fsck.waitForStarted())
+        errorOut("Unable to start fsck");
 
-    /*
-     * For i.MX6, the bootloader belongs at offset 1024 from the start of the disk.
-     * The write cursor should be left there from the disk partitioning process.
-     */
+    fsck.closeWriteChannel();
 
-    if (outputImage.write(bl) <= 0)
-        errorOut("Unable to write bootloader image");
+    if (!fsck.waitForFinished(INT_MAX))
+        errorOut("fsck returned an error");
+
+    if (fsck.exitCode())
+        errorOut(QString("fsck returned an error: " + QString::number(fsck.exitCode())));
+
+    QProcess resize2fs;
+    infoMessage("Checking disk");
+
+    resize2fs.start("resize2fs", QStringList() << QString("%1-part3").arg(outputImage.fileName()));
+
+    if (!resize2fs.waitForStarted())
+        errorOut("Unable to start resize2fs");
+
+    resize2fs.closeWriteChannel();
+
+    if (!resize2fs.waitForFinished(INT_MAX))
+        errorOut("resize2fs returned an error");
+
+    if (resize2fs.exitCode())
+        errorOut(QString("resize2fs returned an error: " + QString::number(resize2fs.exitCode())));
 
     return 0;
 }
 
-int MMCCopyThread::mountDevice()
-{
-#ifdef linux
-    QString ext4fs = QString("%1p2").arg(outputImage.fileName());
-    QString vfatfs = QString("%1p1").arg(outputImage.fileName());
+int MMCCopyThread::mountDisk()
+ {
+    QString ext4fs = QString("%1-part3").arg(outputImage.fileName());
+    QString vfatfs = QString("%1-part1").arg(outputImage.fileName());
     QString bootPath = QString("%1/boot").arg(MOUNT_POINT);
 
     infoMessage("Mounting devices");
@@ -247,47 +171,20 @@ int MMCCopyThread::mountDevice()
     if (mount(ext4fs.toLocal8Bit(), MOUNT_POINT, "ext4", MS_NOATIME | MS_NODIRATIME, "data=writeback,barrier=0,errors=remount-ro") == -1)
         errorOut("Unable to mount image");
 
-    debugMessage("Making /boot directory");
-    if (mkdir(bootPath.toLocal8Bit(), 0660) == -1) {
-        umount(MOUNT_POINT);
-        errorOut(QString("Unable to make boot directory \"%1\": %2").arg(bootPath).arg(strerror(errno)));
-    }
-
     debugMessage("Mounting boot filesystem");
     if (mount(vfatfs.toLocal8Bit(), bootPath.toLocal8Bit(), "vfat", MS_NOATIME | MS_NODIRATIME, "") == -1) {
         errorOut("Unable to mount image boot directory");
         umount(MOUNT_POINT);
     }
-#endif
-    return 0;
-}
-
-int MMCCopyThread::extractImage()
-{
-    QProcess tar;
-    infoMessage("Extracting filesystem");
-
-    tar.setWorkingDirectory(MOUNT_POINT);
-    tar.start("tar", QStringList() << "xzf" << inputImage.fileName());
-    if (!tar.waitForStarted())
-        errorOut("Unable to start tar");
-
-    tar.closeWriteChannel();
-
-    if (!tar.waitForFinished(INT_MAX))
-        errorOut("tar returned an error");
-
-    if (tar.exitCode())
-        errorOut(QString("tar returned an error: " + QString::number(tar.exitCode())));
 
     return 0;
 }
 
-int MMCCopyThread::unmountDevice()
+int MMCCopyThread::unmountDisk()
 {
     QString bootPath = QString("%1/boot").arg(MOUNT_POINT);
 
-    infoMessage("Unmounting devices");
+    infoMessage("Unmounting disk");
 
     debugMessage("Unmounting boot partition");
     if (umount(bootPath.toLocal8Bit()) == -1)
@@ -297,7 +194,6 @@ int MMCCopyThread::unmountDevice()
     if (umount(MOUNT_POINT) == -1)
         errorOut(QString("Unable to umount /: %1").arg(strerror(errno)));
 
-    bootloaderImage.close();
     outputImage.close();
     inputImage.close();
 
@@ -308,28 +204,25 @@ void MMCCopyThread::run()
 {
     if (findDevices())
         return;
-    if (partitionDevice())
-        return;
-    if (formatDevice())
-        return;
-    if (loadBootloader())
-        return;
-    if (mountDevice())
-        return;
     if (extractImage())
         return;
-    if (unmountDevice())
+    if (updatePartitions())
+        return;
+    if (resizeMBR())
+        return;
+    if (resizeRoot())
+        return;
+    if (mountDisk())
+        return;
+    if (unmountDisk())
         return;
 }
 
 
-
-
-
-MMCTestStart::MMCTestStart(QString src, QString bl, QString dst)
+MMCTestStart::MMCTestStart(QString src, QString dst)
 {
     name = "MMC imaging";
-    copyThread = new MMCCopyThread(src, bl, dst);
+    copyThread = new MMCCopyThread(src, dst);
 
     connect(copyThread, SIGNAL(copyError(QString)),
             this, SLOT(testError(QString)));

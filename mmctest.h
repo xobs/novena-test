@@ -12,18 +12,16 @@ class MMCCopyThread : public QThread {
 private:
     QString source;
     QString destination;
-    QString bootloader;
     QFile outputImage;
     QFile inputImage;
-    QFile bootloaderImage;
 
     int findDevices();
-    int partitionDevice();
-    int formatDevice();
-    int loadBootloader();
-    int mountDevice();
     int extractImage();
-    int unmountDevice();
+    int updatePartitions();
+    int resizeMBR();
+    int resizeRoot();
+    int mountDisk();
+    int unmountDisk();
 
     void debugMessage(QString msg);
     void infoMessage(QString msg);
@@ -35,7 +33,7 @@ signals:
     void copyDebug(QString);
 
 public:
-    MMCCopyThread(QString src, QString bl, QString dst);
+    MMCCopyThread(QString src, QString dst);
     void run();
     static QString getInternalBlockName();
     static QString getExternalBlockName();
@@ -46,7 +44,7 @@ public:
 class MMCTestStart : public NovenaTest
 {
 public:
-    MMCTestStart(QString src, QString bl, QString dst);
+    MMCTestStart(QString src, QString dst);
     void runTest();
 };
 
