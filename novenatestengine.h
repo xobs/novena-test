@@ -22,9 +22,8 @@ private:
     NovenaTestEngineThread *currentThread;
 	int errorCount;
 	bool debugMode;
-	bool serialRead;
-	QString serialNumberString;
-	void updateSerialNumber();
+    QString _serialNumber;
+    void getSerial(void);
 
 public:
     NovenaTestEngine(NovenaTestWindow *ui);
@@ -36,7 +35,7 @@ public:
 
 	bool runNextTest(int continueOnErrors = 0);
 	bool debugModeOn();
-	const QString &serialNumber();
+    const QString &serialNumber(void);
 
 public slots:
     /* 

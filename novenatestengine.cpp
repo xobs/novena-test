@@ -1,5 +1,10 @@
 #include <QThread>
 #include <QDebug>
+#include <QCryptographicHash>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <unistd.h>
 
 #include "novenatestengine.h"
 #include "novenatest.h"
@@ -31,48 +36,71 @@ public:
     }
 };
 
-
-
 NovenaTestEngine::NovenaTestEngine(NovenaTestWindow *ui)
 {
     currentTest = NULL;
     currentTestNumber = -1;
     currentThread = NULL;
     this->ui = ui;
-	debugMode = false;
-	serialRead = false;
-	updateSerialNumber();
+    debugMode = false;
+
+    getSerial();
 }
 
-void NovenaTestEngine::updateSerialNumber()
+const QString &NovenaTestEngine::serialNumber(void)
 {
-	if (!serialRead) {
-		unsigned char serialTmp[7];
-//		if (read_fpga_serial(serialTmp))
-			return;
-            /*
-		serialNumberString.sprintf("%02x-%02x%02x%02x-%02x%02x-%02x",
-								  serialTmp[0], serialTmp[1], serialTmp[2], serialTmp[3],
-								  serialTmp[4], serialTmp[5],
-								  serialTmp[6]);
-                                  */
-		serialRead = true;
-	}
+    return _serialNumber;
 }
 
 void NovenaTestEngine::setDebug(bool on)
 {
-	debugMode = on;
+    debugMode = on;
 }
 
 bool NovenaTestEngine::debugModeOn()
 {
-	return debugMode;
+    return debugMode;
 }
 
-const QString &NovenaTestEngine::serialNumber() {
-	updateSerialNumber();
-	return serialNumberString;
+void NovenaTestEngine::getSerial(void)
+{
+    QCryptographicHash *hash = new QCryptographicHash(QCryptographicHash::Sha1);
+    int mem_fd = 0;
+    qint32 *mem_32 = NULL;
+    int mem_range = 0x021bc000;
+    qint32 keys[4];
+
+    _serialNumber = "no-serial";
+
+    mem_fd = open("/dev/mem", O_RDWR);
+    if (mem_fd < 0) {
+        updateTestState("system", TEST_INFO, 0, "Couldn't open /dev/mem");
+        goto out;
+    }
+
+    mem_32 = (qint32 *)mmap(0, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, mem_range&~0xFFFF);
+    if (-1 == (int)mem_32) {
+        updateTestState("system", TEST_INFO, 0, QString() + "Couldn't mmap /dev/mem: " + strerror(errno));
+        goto out;
+    }
+
+    keys[0] = mem_32[0x410 / 4];
+    keys[1] = mem_32[0x420 / 4];
+    keys[2] = mem_32[0x430 / 4];
+    keys[3] = mem_32[0x440 / 4];
+
+    hash->addData((const char *)keys, sizeof(keys));
+
+    _serialNumber = hash->result().toHex();
+    delete hash;
+
+    updateTestState("system", TEST_INFO, 0, QString() + "Serial number: " + _serialNumber);
+
+out:
+    if (mem_fd)
+        close(mem_fd);
+    if (mem_32)
+        munmap(mem_32, 0xFFFF);
 }
 
 bool NovenaTestEngine::loadAllTests() {
@@ -89,9 +117,9 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
     tests.append(new PlayMP3("/factory/test_done_nyan.mp3"));
 
-	/* Wire up all signals and slots */
-	int i;
-	for (i=0; i<tests.count(); i++)
+    /* Wire up all signals and slots */
+    int i;
+    for (i=0; i<tests.count(); i++)
         connect(tests.at(i), SIGNAL(testStateUpdated(QString,int,int,QString)),
                 this, SLOT(updateTestState(QString,int,int,QString)));
 
@@ -99,25 +127,25 @@ bool NovenaTestEngine::loadAllTests() {
 }
 
 const QList<NovenaTest *> & NovenaTestEngine::allTests() {
-	return tests;
+    return tests;
 }
 
 /* Returns true if there are more tests to run */
 bool NovenaTestEngine::runAllTests() {
     currentTestNumber = -1;
-	errorCount = 0;
-	testsToRun.clear();
-	testsToRun = tests;
+    errorCount = 0;
+    testsToRun.clear();
+    testsToRun = tests;
     return runNextTest();
 }
 
 bool NovenaTestEngine::runSelectedTests(QList<NovenaTest *> &newTests)
 {
-	currentTestNumber = -1;
-	errorCount = 0;
-	testsToRun.clear();
-	testsToRun = newTests;
-	return runNextTest();
+    currentTestNumber = -1;
+    errorCount = 0;
+    testsToRun.clear();
+    testsToRun = newTests;
+    return runNextTest();
 }
 
 static const char *levelStr[] = {
@@ -129,7 +157,7 @@ static const char *levelStr[] = {
 void NovenaTestEngine::updateTestState(const QString name, int level, int value, const QString message)
 {
 
-	QString str;
+    QString str;
     str.append("<p>");
     str.append(levelStr[level]);
     str.append(": ");
@@ -138,13 +166,13 @@ void NovenaTestEngine::updateTestState(const QString name, int level, int value,
 
     if (level == TEST_INFO)
         qDebug() << name << "INFO:" << value << message;
-	else if (level == TEST_ERROR) {
+    else if (level == TEST_ERROR) {
         qDebug() << name << "ERROR:" << value << message;
-		errorCount++;
-		QString str;
-		str.append(testsToRun.at(currentTestNumber)->testName());
-		ui->setErrorString(str);
-	}
+        errorCount++;
+        QString str;
+        str.append(testsToRun.at(currentTestNumber)->testName());
+        ui->setErrorString(str);
+    }
     else if (level == TEST_DEBUG)
         qDebug() << name << "DEBUG:" << value << message;
     else
@@ -164,23 +192,23 @@ void NovenaTestEngine::cleanupCurrentTest() {
 
 bool NovenaTestEngine::runNextTest(int continueOnErrors)
 {
-	if (errorCount && !continueOnErrors && !debugMode) {
-		QString str;
-		str.append(testsToRun.at(currentTestNumber)->testName());
-		ui->finishTests(false);
+    if (errorCount && !continueOnErrors && !debugMode) {
+        QString str;
+        str.append(testsToRun.at(currentTestNumber)->testName());
+        ui->finishTests(false);
         emit testsFinished();
-		return false;
-	}
-
-	// Increment the test number, and return if we've run out of tests.
-    currentTestNumber++;
-	if (currentTestNumber >= testsToRun.count()) {
-        ui->setProgressBar(1);
-		ui->finishTests(errorCount?false:true);
-		return false;
+        return false;
     }
 
-	currentTest = testsToRun[currentTestNumber];
+    // Increment the test number, and return if we've run out of tests.
+    currentTestNumber++;
+    if (currentTestNumber >= testsToRun.count()) {
+        ui->setProgressBar(1);
+        ui->finishTests(errorCount?false:true);
+        return false;
+    }
+
+    currentTest = testsToRun[currentTestNumber];
 
     currentThread = new NovenaTestEngineThread(currentTest);
     QObject::connect(currentThread, SIGNAL(finished()),
@@ -188,9 +216,9 @@ bool NovenaTestEngine::runNextTest(int continueOnErrors)
     currentThread->start();
 
     ui->setStatusText(currentTest->testName());
-	ui->setProgressBar(currentTestNumber*1.0/testsToRun.count());
+    ui->setProgressBar(currentTestNumber*1.0/testsToRun.count());
     QString progressText;
-	progressText.sprintf("Progress: %d/%d", currentTestNumber+1, testsToRun.count());
+    progressText.sprintf("Progress: %d/%d", currentTestNumber+1, testsToRun.count());
     ui->setProgressText(progressText);
     return true;
 }
