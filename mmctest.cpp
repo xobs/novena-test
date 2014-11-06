@@ -83,19 +83,6 @@ int MMCCopyThread::extractImage()
     return 0;
 }
 
-int MMCCopyThread::updatePartitions()
-{
-    infoMessage("Updating partition table");
-
-    if (!outputImage.flush())
-        errorOut("Unable to sync disk");
-
-    if (ioctl(outputImage.handle(), BLKRRPART, NULL) == -1)
-        errorOut(QString("Unable to re-read MBR: %1").arg(strerror(errno)));
-
-    return 0;
-}
-
 int MMCCopyThread::resizeMBR()
 {
     QProcess fdisk;
@@ -124,8 +111,18 @@ int MMCCopyThread::resizeMBR()
 
 int MMCCopyThread::resizeRoot()
 {
+
+
+    infoMessage("Updating partition table");
+    if (!outputImage.flush())
+        errorOut("Unable to sync disk");
+    if (ioctl(outputImage.handle(), BLKRRPART, NULL) == -1)
+        errorOut(QString("Unable to re-read MBR: %1").arg(strerror(errno)));
+    sleep(10);
+
+
     QProcess fsck;
-    infoMessage("Checking disk");
+    infoMessage("Running fsck.ext4");
 
     fsck.start("fsck.ext4", QStringList() << "-y" << QString("%1-part3").arg(outputImage.fileName()));
 
@@ -134,11 +131,19 @@ int MMCCopyThread::resizeRoot()
 
     fsck.closeWriteChannel();
 
-    if (!fsck.waitForFinished(INT_MAX))
+    if (!fsck.waitForFinished(INT_MAX)) {
+        copyError(fsck.readAllStandardError());
         errorOut("fsck returned an error");
+    }
 
-    if (fsck.exitCode())
+    if (fsck.exitCode()) {
+        copyError(fsck.readAllStandardError());
         errorOut(QString("fsck returned an error: " + QString::number(fsck.exitCode())));
+    }
+
+
+    sleep(10);
+
 
     QProcess resize2fs;
     infoMessage("Checking disk");
@@ -150,11 +155,15 @@ int MMCCopyThread::resizeRoot()
 
     resize2fs.closeWriteChannel();
 
-    if (!resize2fs.waitForFinished(INT_MAX))
+    if (!resize2fs.waitForFinished(INT_MAX)) {
+        copyError(resize2fs.readAllStandardError());
         errorOut("resize2fs returned an error");
+    }
 
-    if (resize2fs.exitCode())
+    if (resize2fs.exitCode()) {
+        copyError(resize2fs.readAllStandardError());
         errorOut(QString("resize2fs returned an error: " + QString::number(resize2fs.exitCode())));
+    }
 
     return 0;
 }
@@ -205,8 +214,6 @@ void MMCCopyThread::run()
     if (findDevices())
         return;
     if (extractImage())
-        return;
-    if (updatePartitions())
         return;
     if (resizeMBR())
         return;
