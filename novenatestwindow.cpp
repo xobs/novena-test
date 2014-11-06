@@ -12,14 +12,14 @@
 class BiggerScrollbar : public QCleanlooksStyle {
 
 public:
-	int pixelMetric(PixelMetric metric, const QStyleOption *, const QWidget *pWidget = 0) const
-	{
-		if ( metric == PM_ScrollBarExtent )
-		{
-		   return 50;
-		}
-		return  QWindowsStyle::pixelMetric( metric, 0, pWidget );
-	}
+    int pixelMetric(PixelMetric metric, const QStyleOption *, const QWidget *pWidget = 0) const
+    {
+        if ( metric == PM_ScrollBarExtent )
+        {
+           return 50;
+        }
+        return  QWindowsStyle::pixelMetric( metric, 0, pWidget );
+    }
 };
 */
 
@@ -29,18 +29,18 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 {
     //QApplication::setStyle(new BiggerScrollbar);
 
-	ui->setupUi(this);
+    ui->setupUi(this);
 
-	// Start on the "Start Screen"
-	ui->startScreen->setVisible(true);
-	ui->mainScreen->setVisible(false);
-	ui->debugScreen->setVisible(false);
+    // Start on the "Start Screen"
+    ui->startScreen->setVisible(true);
+    ui->mainScreen->setVisible(false);
+    ui->debugScreen->setVisible(false);
 
-	ui->debugActiveLabel->setVisible(false);
-	ui->selectTestButton->setVisible(false);
+    ui->debugActiveLabel->setVisible(false);
+    ui->selectTestButton->setVisible(false);
 
-	ui->startTestsButton->setVisible(false);
-	ui->lookingForUSBLabel->setVisible(true);
+    ui->startTestsButton->setVisible(false);
+    ui->lookingForUSBLabel->setVisible(true);
 
 #ifdef linux
 //    showFullScreen();
@@ -49,35 +49,31 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     engine = new NovenaTestEngine(this);
     engine->loadAllTests();
 
-	// Wire up all start-screen UI buttons
+    // Wire up all start-screen UI buttons
     connect(ui->startTestsButton, SIGNAL(clicked(bool)),
             this, SLOT(startTests()));
 
-	connect(ui->debugMode1, SIGNAL(clicked(bool)),
-			this, SLOT(debugMode1Clicked()));
-	connect(ui->debugMode2, SIGNAL(clicked(bool)),
-			this, SLOT(debugMode2Clicked()));
-	connect(ui->debugMode3, SIGNAL(clicked(bool)),
-			this, SLOT(debugMode3Clicked()));
+    connect(ui->debugMode1, SIGNAL(clicked(bool)),
+            this, SLOT(debugMode1Clicked()));
+    connect(ui->debugMode2, SIGNAL(clicked(bool)),
+            this, SLOT(debugMode2Clicked()));
+    connect(ui->debugMode3, SIGNAL(clicked(bool)),
+            this, SLOT(debugMode3Clicked()));
 
-	connect(ui->runSelectedTestsButton, SIGNAL(clicked()),
-			this, SLOT(debugRunSelectedItems()));
+    connect(ui->runSelectedTestsButton, SIGNAL(clicked()),
+            this, SLOT(debugRunSelectedItems()));
 
-	connect(ui->testSelectionButton, SIGNAL(clicked()),
-			this, SLOT(moveToDebugScreen()));
+    connect(ui->testSelectionButton, SIGNAL(clicked()),
+            this, SLOT(moveToDebugScreen()));
 
-
-	// Print out the serial number to the screen
-    ui->serialLabel->setText(QString("Serial number: %1").arg(engine->serialNumber()));
-
-	// Start the secret debug code at stage 0
-	sequencePosition = 0;
+    // Start the secret debug code at stage 0
+    sequencePosition = 0;
 
 
     //openLogFile();
 
-	ui->startTestsButton->setVisible(true);
-	ui->lookingForUSBLabel->setVisible(false);
+    ui->startTestsButton->setVisible(true);
+    ui->lookingForUSBLabel->setVisible(false);
 
     startTests();
 }
@@ -85,174 +81,174 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 void NovenaTestWindow::openLogFile()
 {
 #ifdef linux
-	QString mountPoint;
+    QString mountPoint;
 
-	while (1) {
-		qApp->processEvents();
+    while (1) {
+        qApp->processEvents();
 
-		QFile mounts("/proc/mounts");
-		QString line;
+        QFile mounts("/proc/mounts");
+        QString line;
 
-		mounts.open(QIODevice::ReadOnly | QIODevice::Text);
-		for (line = mounts.readLine();
-			 !line.isNull();
-			 line = mounts.readLine()) {
-			if (!line.contains("/media/sd"))
-				continue;
+        mounts.open(QIODevice::ReadOnly | QIODevice::Text);
+        for (line = mounts.readLine();
+             !line.isNull();
+             line = mounts.readLine()) {
+            if (!line.contains("/media/sd"))
+                continue;
 
-			QString testDirectory;
-			QString testFile;
-			QString serial = engine->serialNumber();
-			QFile currentFile;
+            QString testDirectory;
+            QString testFile;
+            QString serial = engine->serialNumber();
+            QFile currentFile;
 
-			mountPoint = line.split(' ')[1];
-			QDir currentDir(mountPoint);
+            mountPoint = line.split(' ')[1];
+            QDir currentDir(mountPoint);
 
-			qDebug() << "Current dir (mountPoint):" << currentDir.path();
-			testDirectory = "novena-logs/";
-			testDirectory.append(serial.split('-')[0]);
+            qDebug() << "Current dir (mountPoint):" << currentDir.path();
+            testDirectory = "novena-logs/";
+            testDirectory.append(serial.split('-')[0]);
 
-			if (!currentDir.mkpath(testDirectory)) {
-				qDebug() << "Unable to make directory";
-				continue;
-			}
+            if (!currentDir.mkpath(testDirectory)) {
+                qDebug() << "Unable to make directory";
+                continue;
+            }
 
-			testFile = testDirectory;
-			testFile.append("/");
-			testFile.append(serial);
-			testFile.append(".html");
+            testFile = testDirectory;
+            testFile.append("/");
+            testFile.append(serial);
+            testFile.append(".html");
 
-			logFile.setFileName(currentDir.absoluteFilePath(testFile));
-			if (!logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-				qDebug() << "Unable to create logfile" << logFile.fileName();
-				continue;
-			}
+            logFile.setFileName(currentDir.absoluteFilePath(testFile));
+            if (!logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+                qDebug() << "Unable to create logfile" << logFile.fileName();
+                continue;
+            }
 
-			logFile.write("<p>Started a new test\n");
-			logFile.flush();
-			return;
-		}
-	}
+            logFile.write("<p>Started a new test\n");
+            logFile.flush();
+            return;
+        }
+    }
 #endif
-	return;
+    return;
 }
 
 void NovenaTestWindow::debugItemPressed(QListWidgetItem *)
 {
-	if (ui->testListWidget->selectedItems().count())
-		ui->runSelectedTestsButton->setEnabled(true);
-	else
-		ui->runSelectedTestsButton->setEnabled(false);
+    if (ui->testListWidget->selectedItems().count())
+        ui->runSelectedTestsButton->setEnabled(true);
+    else
+        ui->runSelectedTestsButton->setEnabled(false);
 }
 
 void NovenaTestWindow::debugRunSelectedItems()
 {
-	QList<QListWidgetItem *>selected = ui->testListWidget->selectedItems();
-	QList<NovenaTest *>testsToRun;
+    QList<QListWidgetItem *>selected = ui->testListWidget->selectedItems();
+    QList<NovenaTest *>testsToRun;
 
-	int i;
-	for (i=0; i<selected.count(); i++) {
-		QVariant v = selected.at(i)->data(Qt::UserRole);
-		NovenaTest *t = reinterpret_cast<NovenaTest*>(v.value<void*>());
-		testsToRun.append(t);
-	}
+    int i;
+    for (i=0; i<selected.count(); i++) {
+        QVariant v = selected.at(i)->data(Qt::UserRole);
+        NovenaTest *t = reinterpret_cast<NovenaTest*>(v.value<void*>());
+        testsToRun.append(t);
+    }
 
-	moveToMainScreen();
-	engine->runSelectedTests(testsToRun);
+    moveToMainScreen();
+    engine->runSelectedTests(testsToRun);
 }
 
 void NovenaTestWindow::debugMode1Clicked()
 {
-	advanceDebugSequence('1');
+    advanceDebugSequence('1');
 }
 
 void NovenaTestWindow::debugMode2Clicked()
 {
-	advanceDebugSequence('2');
+    advanceDebugSequence('2');
 }
 
 void NovenaTestWindow::debugMode3Clicked()
 {
-	advanceDebugSequence('3');
+    advanceDebugSequence('3');
 }
 
 void NovenaTestWindow::advanceDebugSequence(const char c)
 {
-	if (SEQUENCE[sequencePosition] == c)
-		sequencePosition++;
-	else if (SEQUENCE[0] == c)
-		sequencePosition = 1;
-	else
-		sequencePosition = 0;
+    if (SEQUENCE[sequencePosition] == c)
+        sequencePosition++;
+    else if (SEQUENCE[0] == c)
+        sequencePosition = 1;
+    else
+        sequencePosition = 0;
 
-	if (sequencePosition >= sizeof(SEQUENCE)-1)
-		moveToDebugScreen();
+    if (sequencePosition >= sizeof(SEQUENCE)-1)
+        moveToDebugScreen();
 }
 
 void NovenaTestWindow::moveToDebugScreen()
 {
-	ui->debugActiveLabel->setVisible(true);
-	ui->selectTestButton->setVisible(true);
-	ui->debugMode1->setVisible(false);
-	ui->debugMode2->setVisible(false);
-	ui->debugMode3->setVisible(false);
-	ui->testSelectionButton->setVisible(false);
-	ui->errorFailLabel->setVisible(false);
-	ui->errorLabel->setVisible(false);
-	ui->passLabel->setVisible(false);
+    ui->debugActiveLabel->setVisible(true);
+    ui->selectTestButton->setVisible(true);
+    ui->debugMode1->setVisible(false);
+    ui->debugMode2->setVisible(false);
+    ui->debugMode3->setVisible(false);
+    ui->testSelectionButton->setVisible(false);
+    ui->errorFailLabel->setVisible(false);
+    ui->errorLabel->setVisible(false);
+    ui->passLabel->setVisible(false);
 
-	ui->runSelectedTestsButton->setEnabled(false);
+    ui->runSelectedTestsButton->setEnabled(false);
 
-	sequencePosition = 0;
-	engine->setDebug(true);
+    sequencePosition = 0;
+    engine->setDebug(true);
 
-	ui->startScreen->setVisible(false);
-	ui->debugScreen->setVisible(true);
+    ui->startScreen->setVisible(false);
+    ui->debugScreen->setVisible(true);
 
-	QList<NovenaTest *>tests = engine->allTests();
-	int i;
-	ui->testListWidget->clear();
-	for (i=0; i<tests.count(); i++) {
+    QList<NovenaTest *>tests = engine->allTests();
+    int i;
+    ui->testListWidget->clear();
+    for (i=0; i<tests.count(); i++) {
         QListWidgetItem *item = new QListWidgetItem(tests.at(i)->testName());
-		QVariant v = QVariant::fromValue<void*>(tests.at(i));
-		item->setData(Qt::UserRole, v);
-		item->setSizeHint(QSize(320,30));
-		ui->testListWidget->addItem(item);
-		connect(ui->testListWidget, SIGNAL(itemPressed(QListWidgetItem *)),
-				this, SLOT(debugItemPressed(QListWidgetItem *)));
-	}
-	ui->testListWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
+        QVariant v = QVariant::fromValue<void*>(tests.at(i));
+        item->setData(Qt::UserRole, v);
+        item->setSizeHint(QSize(320,30));
+        ui->testListWidget->addItem(item);
+        connect(ui->testListWidget, SIGNAL(itemPressed(QListWidgetItem *)),
+                this, SLOT(debugItemPressed(QListWidgetItem *)));
+    }
+    ui->testListWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
 }
 
 void NovenaTestWindow::moveToMainScreen()
 {
-	ui->errorLabel->setVisible(false);
-	ui->errorFailLabel->setVisible(false);
-	ui->passLabel->setVisible(false);
-	ui->testSelectionButton->setVisible(false);
-	ui->progressBar->setVisible(true);
-	ui->progressLabel->setVisible(true);
+    ui->errorLabel->setVisible(false);
+    ui->errorFailLabel->setVisible(false);
+    ui->passLabel->setVisible(false);
+    ui->testSelectionButton->setVisible(false);
+    ui->progressBar->setVisible(true);
+    ui->progressLabel->setVisible(true);
 
-	ui->mainScreen->setVisible(true);
-	ui->debugScreen->setVisible(false);
-	ui->startScreen->setVisible(false);
+    ui->mainScreen->setVisible(true);
+    ui->debugScreen->setVisible(false);
+    ui->startScreen->setVisible(false);
 
-	QString str("");
-	addTestLog(str);
-	QScrollBar *vert = ui->testLog->verticalScrollBar();
-	vert->setValue(vert->maximum());
+    QString str("");
+    addTestLog(str);
+    QScrollBar *vert = ui->testLog->verticalScrollBar();
+    vert->setValue(vert->maximum());
 }
 
 void NovenaTestWindow::startTests()
 {
-	if (!logFile.isOpen()) {
-		logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
-		logFile.write("<p>Restarted test\n");
-		logFile.flush();
-	}
+    if (!logFile.isOpen()) {
+        logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+        logFile.write("<p>Restarted test\n");
+        logFile.flush();
+    }
 
-	moveToMainScreen();
-	engine->runAllTests();
+    moveToMainScreen();
+    engine->runAllTests();
 }
 
 void NovenaTestWindow::setStatusText(QString message)
@@ -274,52 +270,52 @@ void NovenaTestWindow::setProgressText(QString &message)
 
 void NovenaTestWindow::setErrorString(QString &message)
 {
-	errorString = message;
-	ui->errorLabel->setText(errorString);
+    errorString = message;
+    ui->errorLabel->setText(errorString);
 }
 
 void NovenaTestWindow::finishTests(bool successful)
 {
-	ui->progressLabel->setVisible(false);
-	ui->progressBar->setVisible(false);
+    ui->progressLabel->setVisible(false);
+    ui->progressBar->setVisible(false);
 
-	if (successful) {
-		ui->passLabel->setVisible(true);
-		logFile.write("<p><font color=\"green\">PASS</font>\n");
-	}
-	else {
-		ui->errorLabel->setVisible(true);
-		ui->errorFailLabel->setVisible(true);
-		logFile.write("<p><font color=\"red\">FAIL</font>\n");
-	}
+    if (successful) {
+        ui->passLabel->setVisible(true);
+        logFile.write("<p><font color=\"green\">PASS</font>\n");
+    }
+    else {
+        ui->errorLabel->setVisible(true);
+        ui->errorFailLabel->setVisible(true);
+        logFile.write("<p><font color=\"red\">FAIL</font>\n");
+    }
 
-	if (engine->debugModeOn()) {
-		ui->testSelectionButton->setVisible(true);
-	}
+    if (engine->debugModeOn()) {
+        ui->testSelectionButton->setVisible(true);
+    }
 
-	logFile.close();
+    logFile.close();
 }
 
 void NovenaTestWindow::addTestLog(QString &message)
 {
-	QScrollBar *vert = ui->testLog->verticalScrollBar();
-	bool shouldScroll = false;
-	if (vert->value() == vert->maximum())
-		shouldScroll = true;
+    QScrollBar *vert = ui->testLog->verticalScrollBar();
+    bool shouldScroll = false;
+    if (vert->value() == vert->maximum())
+        shouldScroll = true;
 
     ui->testLog->appendHtml(message);
 
-	if (shouldScroll)
-		vert->setValue(vert->maximum());
+    if (shouldScroll)
+        vert->setValue(vert->maximum());
 
-	if (logFile.isOpen()) {
-		logFile.write(message.toUtf8());
-		logFile.write("\n");
-		logFile.flush();
-	}
+    if (logFile.isOpen()) {
+        logFile.write(message.toUtf8());
+        logFile.write("\n");
+        logFile.flush();
+    }
 }
 
 NovenaTestWindow::~NovenaTestWindow()
 {
-	delete ui;
+    delete ui;
 }

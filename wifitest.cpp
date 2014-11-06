@@ -53,7 +53,7 @@ void WifiTest::openUsbDrive()
 
 #ifdef linux
     /*
-	bool found = false;
+    bool found = false;
 
     while (!found) {
         QFile mounts("/proc/mounts");
@@ -75,11 +75,11 @@ void WifiTest::openUsbDrive()
             }
             line = mounts.readLine();
         }
-	}
+    }
     */
 #else
-	file = new QFile("download-test-file.bin");
-	file->open(QIODevice::WriteOnly);
+    file = new QFile("download-test-file.bin");
+    file->open(QIODevice::WriteOnly);
 #endif
     return;
 }

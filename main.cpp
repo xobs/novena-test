@@ -11,9 +11,9 @@ int main(int argc, char *argv[])
     NovenaTestWindow w;
     w.show();
     
-//#ifdef Q_WS_X11
-//	qt_x11_wait_for_window_manager(&w);
-//#endif
+#ifdef Q_WS_X11
+    qt_x11_wait_for_window_manager(&w);
+#endif
 
     return a.exec();
 }
