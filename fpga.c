@@ -26,7 +26,6 @@ static uint8_t fpga_addr = 0x1e;
 
 
 #ifdef linux
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 int write_fpga(uint8_t start_reg, void *buffer, uint32_t bytes)
 {

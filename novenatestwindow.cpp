@@ -43,7 +43,7 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 	ui->lookingForUSBLabel->setVisible(true);
 
 #ifdef linux
-    showFullScreen();
+//    showFullScreen();
 #endif
 
     engine = new NovenaTestEngine(this);

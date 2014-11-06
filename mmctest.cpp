@@ -176,10 +176,11 @@ int MMCCopyThread::partitionDevice()
     if (outputImage.write(zeroes) == -1)
         errorOut("Unable to pad image");
 
-#ifdef linux
+    if (!outputImage.flush())
+        errorOut("Unable to sync disk");
+
     if (ioctl(outputImage.handle(), BLKRRPART, NULL) == -1)
         errorOut(QString("Unable to re-read MBR: %1").arg(strerror(errno)));
-#endif
 
     return 0;
 }
@@ -275,6 +276,9 @@ int MMCCopyThread::extractImage()
 
     if (!tar.waitForFinished(INT_MAX))
         errorOut("tar returned an error");
+
+    if (tar.exitCode())
+        errorOut(QString("tar returned an error: " + QString::number(tar.exitCode())));
 
     return 0;
 }

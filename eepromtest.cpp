@@ -21,7 +21,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 #include <ctype.h>
 
@@ -162,7 +161,7 @@ static int parse_mac(const char *str, void *out) {
 static int eeprom_read_i2c(struct eeprom_dev *dev, int addr, void *data, int count) {
     struct i2c_rdwr_ioctl_data session;
     struct i2c_msg messages[2];
-    uint8_t set_addr_buf[2];
+    char set_addr_buf[2];
 
     memset(set_addr_buf, 0, sizeof(set_addr_buf));
     memset(data, 0, count);
@@ -178,7 +177,7 @@ static int eeprom_read_i2c(struct eeprom_dev *dev, int addr, void *data, int cou
     messages[1].addr = dev->addr;
     messages[1].flags = I2C_M_RD;
     messages[1].len = count;
-    messages[1].buf = (unsigned char *)data;
+    messages[1].buf = (char *)data;
 
     session.msgs = messages;
     session.nmsgs = 2;
@@ -193,7 +192,7 @@ static int eeprom_read_i2c(struct eeprom_dev *dev, int addr, void *data, int cou
 static int eeprom_write_i2c(struct eeprom_dev *dev, int addr, void *data, int count) {
     struct i2c_rdwr_ioctl_data session;
     struct i2c_msg messages[1];
-    uint8_t data_buf[2+count];
+    char data_buf[2+count];
 
     data_buf[0] = addr>>8;
     data_buf[1] = addr;

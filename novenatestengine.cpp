@@ -13,6 +13,7 @@
 #include "netperftest.h"
 #include "eepromtest.h"
 #include "waitfornetwork.h"
+#include "playmp3.h"
 
 class NovenaTest;
 class NovenaTestEngineThread : public QThread {
@@ -76,17 +77,17 @@ const QString &NovenaTestEngine::serialNumber() {
 
 bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
-    tests.append(new MMCTestStart("/factory/quantum-biosys.tar.gz",
-                                  "/factory/u-boot-internal.imx",
-                                  MMCCopyThread::getInternalBlockName()));
+//    tests.append(new MMCTestStart("/factory/quantum-biosys.tar.gz",
+//                                  "/factory/u-boot-internal.imx",
+//                                  MMCCopyThread::getInternalBlockName()));
     tests.append(new WaitForNetwork());
-    tests.append(new EEPROMStart("http://192.168.100.11:8000/getnew/", "es8328,pcie,gbit,hdmi"));
+//    tests.append(new EEPROMStart("http://bunniefoo.com:8675/getnew/", "es8328,pcie,gbit,hdmi"));
     tests.append(new USBTest());
-    tests.append(new FpgaTest());
-    //tests.append(new NetPerfTest());
-    tests.append(new MMCTestFinish());
-    tests.append(new EEPROMFinish("http://192.168.100.11:8000/assign/by-serial/%1/"));
+//    tests.append(new FpgaTest());
+//    tests.append(new MMCTestFinish());
+//    tests.append(new EEPROMFinish("http://bunniefoo.com:8675/assign/by-serial/%1/"));
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
+    tests.append(new PlayMP3("/factory/test_done_nyan.mp3"));
 
 	/* Wire up all signals and slots */
 	int i;
