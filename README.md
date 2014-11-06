@@ -48,3 +48,47 @@ The following tests have been defined.  Note that tests in italics have not yet 
 * PCIe tester (enumeration?  Ethernet loopback?)
 * EEPROM tester (Verify EEPROM exists, update it if necessary)
 * String printer (Useful for printing status messages)
+
+
+Booting Factory Test
+--------------------
+
+Put the factory test on its own root filesystem image, and change the disk ID
+to 0x4e6f7646 ("NovF"):
+
+    fdisk /dev/sdb
+    x
+    i
+    0x4e6f7646
+    r
+    w
+
+Then create a uEnv.txt file in the root, containing the following:
+
+    finalhook=setenv rec factory ; setenv bootargs init=/lib/systemd/systemd rootwait rw root=PARTUUID=4e6f7646-03 console=tty0
+
+Also, create a factory-test.service file:
+
+	[Unit]
+	Description=Novena Factory Image
+	DefaultDependencies=no
+	After=dbus.service network-pre.target systemd-sysusers.service
+	Before=systemd-network.target network.target multi-user.target shutdown.target graphical.target systemd-user-sessions.service novena-firstrun.service
+
+	[Service]
+	Type=oneshot
+	RemainAfterExit=yes
+	Restart=no
+	ExecStart=/usr/bin/startx xfce4-terminal
+	User=root
+
+	[Install]
+	WantedBy=multi-user.target
+
+Modify /etc/fstab on the target system.  Replace all instances of
+platform-2198000.usdhc with platform-2194000.usdhc and add a line to mount
+the installation media, and create /factory:
+
+    /dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.1:1.0-scsi-0:0:0:0-part1 /factory                vfat       defaults                      2  2
+
+Finally, load the service, along with the binary and target disk image.
