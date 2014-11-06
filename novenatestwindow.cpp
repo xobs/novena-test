@@ -69,8 +69,7 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     // Start the secret debug code at stage 0
     sequencePosition = 0;
 
-
-    //openLogFile();
+    openLogFile();
 
     ui->startTestsButton->setVisible(true);
     ui->lookingForUSBLabel->setVisible(false);
@@ -80,56 +79,35 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 
 void NovenaTestWindow::openLogFile()
 {
-#ifdef linux
-    QString mountPoint;
+    QString testDirectory;
+    QString testFile;
+    QString serial = engine->serialNumber();
+    QString mountPoint = "/factory/";
+    QDir currentDir(mountPoint);
 
-    while (1) {
-        qApp->processEvents();
+    qDebug() << "Current dir (mountPoint):" << currentDir.path();
+    testDirectory = "novena-logs/";
 
-        QFile mounts("/proc/mounts");
-        QString line;
-
-        mounts.open(QIODevice::ReadOnly | QIODevice::Text);
-        for (line = mounts.readLine();
-             !line.isNull();
-             line = mounts.readLine()) {
-            if (!line.contains("/media/sd"))
-                continue;
-
-            QString testDirectory;
-            QString testFile;
-            QString serial = engine->serialNumber();
-            QFile currentFile;
-
-            mountPoint = line.split(' ')[1];
-            QDir currentDir(mountPoint);
-
-            qDebug() << "Current dir (mountPoint):" << currentDir.path();
-            testDirectory = "novena-logs/";
-            testDirectory.append(serial.split('-')[0]);
-
-            if (!currentDir.mkpath(testDirectory)) {
-                qDebug() << "Unable to make directory";
-                continue;
-            }
-
-            testFile = testDirectory;
-            testFile.append("/");
-            testFile.append(serial);
-            testFile.append(".html");
-
-            logFile.setFileName(currentDir.absoluteFilePath(testFile));
-            if (!logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-                qDebug() << "Unable to create logfile" << logFile.fileName();
-                continue;
-            }
-
-            logFile.write("<p>Started a new test\n");
-            logFile.flush();
-            return;
-        }
+    if (!currentDir.mkpath(testDirectory)) {
+        qDebug() << "Unable to make directory";
+        return;
     }
-#endif
+
+    testFile = testDirectory;
+    testFile.append("/");
+    testFile.append(serial);
+    testFile.append("-");
+    testFile.append(QString::number(time(NULL)));
+    testFile.append(".html");
+
+    logFile.setFileName(currentDir.absoluteFilePath(testFile));
+    if (!logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        qDebug() << "Unable to create logfile" << logFile.fileName();
+        return;
+    }
+
+    logFile.write("<p>Started a new test\n");
+    logFile.flush();
     return;
 }
 
