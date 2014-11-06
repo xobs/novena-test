@@ -95,7 +95,13 @@ void HWClockTestStart::runTest()
     if (getNtpDate())
         return;
 
-    testInfo("MMC copy continuing in background");
+    int sysEpoch = time(NULL);
+    if (sysEpoch < 1415269059) {
+        testError(QString("Error: We appear to be running in the past (RTC is %1, which is before this test was written at 1415269059)").arg(sysEpoch));
+        return;
+    }
+
+    testInfo("Will check the HW RTC after the copy is complete");
 }
 
 
