@@ -17,7 +17,6 @@ private:
 
     int findDevices();
     int extractImage();
-    int updatePartitions();
     int resizeMBR();
     int resizeRoot();
     int mountDisk();
