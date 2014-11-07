@@ -112,7 +112,7 @@ bool NovenaTestEngine::loadAllTests() {
                                   MMCCopyThread::getInternalBlockName()));
     tests.append(new WaitForNetwork(WaitForNetwork::WiFi));
     tests.append(new HWClockTestStart());
-    tests.append(new EEPROMStart("http://bunniefoo.com:8674/getnew/", "es8328,pcie,gbit,hdmi"));
+    tests.append(new EEPROMStart("http://bunniefoo.com:8674/getnew/", "es8328,pcie,gbit,hdmi,eepromoops"));
     tests.append(new NetPerfTest());
     tests.append(new USBTest());
     tests.append(new FpgaTest());
