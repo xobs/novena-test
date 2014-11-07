@@ -24,8 +24,8 @@ const QString WaitForNetwork::getInterfaceName(enum interface iface)
         path = "/sys/bus/platform/devices/2188000.ethernet/net/";
     else if (iface == USB)
         path = "/sys/bus/usb/devices/1-1.2:1.0/net/";
-    else if (iface == PCIe)
-        path = "/sys/devices/pci0000:00/0000:00:00.0/0000:01:00.0/net/";
+    else if (iface == WiFi)
+        path = "/sys/devices/soc0/soc/1ffc000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/net/";
     else
         return QString();
 
@@ -34,7 +34,7 @@ const QString WaitForNetwork::getInterfaceName(enum interface iface)
 
     for (int i = 0; i < list.size(); ++i) {
         QFileInfo fileInfo = list.at(i);
-        if (fileInfo.fileName().startsWith("eth"))
+        if (!fileInfo.fileName().startsWith("."))
             return fileInfo.fileName();
     }
     return QString();
@@ -42,35 +42,26 @@ const QString WaitForNetwork::getInterfaceName(enum interface iface)
 
 
 
-WaitForNetwork::WaitForNetwork()
+WaitForNetwork::WaitForNetwork(enum interface iface)
 {
-    name = "Wait for Network";
+    name = "Connect to WiFi";
+    _iface = iface;
 }
 
 void WaitForNetwork::runTest()
 {
-    QProcess dhclient;
-
-    QString usbIface = getInterfaceName(USB);
-    if (usbIface == "") {
-        testError("Couldn't find USB Ethernet device");
+    QString interface = getInterfaceName(_iface);
+    if (interface == "") {
+        testError("Couldn't find requested network interface");
         return;
     }
 
-    dhclient.start("/sbin/dhclient", QStringList() << "-d" << usbIface);
-    if (!dhclient.waitForStarted()) {
-        testError("Unable to start dhclient");
-        return;
-    }
-
-    dhclient.closeWriteChannel();
-
-    testInfo(QString() + "Waiting for USB (" + usbIface + ") network connection...");
+    testInfo(QString() + "Waiting for network interface " + interface + " to come up...");
 
     while (1) {
         foreach(QNetworkInterface netInterface, QNetworkInterface::allInterfaces()) {
             // Return only the first non-loopback MAC Address
-            if (!(netInterface.name() == usbIface))
+            if (!(netInterface.name() == interface))
                 continue;
 
             if (!(netInterface.flags() & QNetworkInterface::IsRunning))
@@ -82,7 +73,7 @@ void WaitForNetwork::runTest()
 
             testDebug(QString() + "Iface: " + netInterface.name());
             testDebug(QString() + "Flags: " + QString::number(netInterface.flags()));
-            testDebug(QString() + "Interfaces: ");
+            testDebug(QString() + "Addresses: ");
             int foundIpv4 = 0;
             for (int i = 0; i < addresses.size(); i++) {
                 testDebug(addresses.at(i).ip().toString());
@@ -93,13 +84,13 @@ void WaitForNetwork::runTest()
             if (foundIpv4 < 1)
                 continue;
 
-            testInfo("USB interface came up");
+            testInfo("Interface " + interface + " came up");
             return;
         }
         SleeperThread::msleep(1000);
     }
 
-    testError("Couldn't find USB Ethernet device");
+    testError("Couldn't find requested interface");
     return;
 }
 

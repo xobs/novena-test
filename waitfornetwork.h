@@ -4,17 +4,21 @@
 
 class WaitForNetwork : public NovenaTest
 {
+
 public:
-    WaitForNetwork();
-    void runTest();
 
     enum interface {
         GBit,
-        PCIe,
+        WiFi,
         USB,
     };
 
+    WaitForNetwork(enum interface iface);
+    void runTest();
     static const QString getInterfaceName(enum interface iface);
+
+private:
+    enum interface _iface;
 };
 
 #endif // WAITFORNETWORK_H
