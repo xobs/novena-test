@@ -27,6 +27,7 @@ SOURCES += main.cpp\
     eepromtest.cpp \
     netperftest.cpp \
     usbtest.cpp \
+    timertest.cpp \
     fpgatest.cpp \
     waitfornetwork.cpp \
     playmp3.cpp \
@@ -54,6 +55,7 @@ HEADERS  += novenatestwindow.h \
     eepromtest.h \
     netperftest.h \
     usbtest.h \
+    timertest.h \
     fpgatest.h \
     waitfornetwork.h \
     playmp3.h \
