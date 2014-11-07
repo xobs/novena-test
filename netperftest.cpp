@@ -37,8 +37,8 @@ const QString NetPerfTest::getInterfaceName(enum interface iface)
         path = "/sys/bus/platform/devices/2188000.ethernet/net/";
     else if (iface == USB)
         path = "/sys/bus/usb/devices/1-1.2:1.0/net/";
-    else if (iface == PCIe)
-        path = "/sys/devices/pci0000:00/0000:00:00.0/0000:01:00.0/net/";
+    else if (iface == WiFi)
+        path = "/sys/devices/soc0/soc/1ffc000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/net/";
     else
         return QString();
 
@@ -47,7 +47,7 @@ const QString NetPerfTest::getInterfaceName(enum interface iface)
 
     for (int i = 0; i < list.size(); ++i) {
         QFileInfo fileInfo = list.at(i);
-        if (fileInfo.fileName().startsWith("eth"))
+        if (!fileInfo.fileName().startsWith("."))
             return fileInfo.fileName();
     }
     return QString();
@@ -95,7 +95,7 @@ int NetPerfTest::setMTU(const QString &iface)
 {
     QProcess ifconfig;
 
-    testInfo("Setting MTU of PCIe (as a workaround)");
+    testInfo("Setting MTU of interface");
 
     testDebug("Starting ifconfig");
     ifconfig.start("ifconfig", QStringList() << iface << "mtu" << "492");
@@ -249,20 +249,21 @@ void NetPerfTest::runTest()
 {
     QString gbit = getInterfaceName(GBit);
     QString usb = getInterfaceName(USB);
-    QString pcie = getInterfaceName(PCIe);
+    QString wifi = getInterfaceName(WiFi);
 
     QString gbitMac;
-    QString pcieMac;
+    QString wifiMac;
+    QString usbMac;
 
     QString gbitIp = "172.16.5.4";
-    QString pcieIp = "172.16.5.6";
+    QString usbIp = "172.16.5.6";
 
     QString pgdev;
     int pktlen;
     int pktcount = 100000;
-    QString rate = "200M";
+    QString rate = "70M";
 
-    qulonglong pcieTxStart, pcieTxEnd, pcieRxStart, pcieRxEnd;
+    qulonglong usbTxStart, usbTxEnd, usbRxStart, usbRxEnd;
     qulonglong gbitTxStart, gbitTxEnd, gbitRxStart, gbitRxEnd;
 
     QTime timer;
@@ -270,7 +271,7 @@ void NetPerfTest::runTest()
 
     testInfo(QString("Gigabit is: %1").arg(gbit));
     testInfo(QString("USB is: %1").arg(usb));
-    testInfo(QString("PCIe is: %1").arg(pcie));
+    testInfo(QString("Wifi is: %1").arg(wifi));
 
     if (usb == "") {
         testError("Unable to find USB Ethernet port");
@@ -282,8 +283,8 @@ void NetPerfTest::runTest()
         return;
     }
 
-    if (pcie == "") {
-        testError("Unable to find PCIe Ethernet port");
+    if (wifi == "") {
+        testError("Unable to find Wifi card");
         return;
     }
 
@@ -291,17 +292,14 @@ void NetPerfTest::runTest()
     gbitMac = getMacAddress(gbit);
     testDebug(QString("Gigabit MAC address: ") + gbitMac);
 
-    pcieMac = getMacAddress(pcie);
-    testDebug(QString("PCIe MAC address: ") + pcieMac);
+    wifiMac = getMacAddress(wifi);
+    testDebug(QString("WiFi MAC address: ") + wifiMac);
+
+    usbMac = getMacAddress(usb);
+    testDebug(QString("USB MAC address: ") + usbMac);
 
     if (initModule(PKTGEN_PATH))
         return;
-
-
-    if (setMTU(pcie)) {
-        testError("Unable to set PCIe MTU");
-        return;
-    }
 
 
     if (setIPAddress(gbit, gbitIp)) {
@@ -309,8 +307,8 @@ void NetPerfTest::runTest()
         return;
     }
 
-    if (setIPAddress(pcie, pcieIp)) {
-        testError("Unable to assign an address to PCIe Ethernet port");
+    if (setIPAddress(usb, usbIp)) {
+        testError("Unable to assign an address to USB Ethernet port");
         return;
     }
 
@@ -335,7 +333,7 @@ void NetPerfTest::runTest()
     testDebug("Adding devices to run");
 
     pgdev = "kpktgend_0";
-    pgset(pgdev, QString("add_device ") + pcie);
+    pgset(pgdev, QString("add_device ") + usb);
 
     pgdev = "kpktgend_2";
     pgset(pgdev, QString("add_device ") + gbit);
@@ -344,9 +342,9 @@ void NetPerfTest::runTest()
 
     testInfo("Configuring individual devices");
 
-    testDebug("Configuring generator for PCIe");
-    pgdev = pcie;
-    pktlen = 500;
+    testDebug("Configuring generator for USB");
+    pgdev = usb;
+    pktlen = 1300;
     pgset(pgdev, "clone_skb 0");
     pgset(pgdev, QString("min_pkt_size ") + QString::number(pktlen));
     pgset(pgdev, QString("max_pkt_size ") + QString::number(pktlen));
@@ -358,18 +356,18 @@ void NetPerfTest::runTest()
 
     testDebug("Configuring generator for Gigabit");
     pgdev = gbit;
-    pktlen = 2000;
+    pktlen = 1300;
     pgset(pgdev, "clone_skb 0");
     pgset(pgdev, QString("min_pkt_size ") + QString::number(pktlen));
     pgset(pgdev, QString("max_pkt_size ") + QString::number(pktlen));
-    pgset(pgdev, QString("dst ") + pcieIp);
-    pgset(pgdev, QString("dst_mac ") + pcieMac);
+    pgset(pgdev, QString("dst ") + usbIp);
+    pgset(pgdev, QString("dst_mac ") + usbMac);
     pgset(pgdev, QString("count ") + QString::number(pktcount));
     pgset(pgdev, QString("rate ") + rate);
     pgset(pgdev, "delay 100000");
 
 
-    getNetworkBytes(pcie, pcieTxStart, pcieRxStart);
+    getNetworkBytes(usb, usbTxStart, usbRxStart);
     getNetworkBytes(gbit, gbitTxStart, gbitRxStart);
     testInfo("Starting packet generator");
     pgdev = "pgctrl";
@@ -378,28 +376,28 @@ void NetPerfTest::runTest()
     pgset(pgdev, "start");
     int elapsed = timer.elapsed();
 
-    getNetworkBytes(pcie, pcieTxEnd, pcieRxEnd);
+    getNetworkBytes(usb, usbTxEnd, usbRxEnd);
     getNetworkBytes(gbit, gbitTxEnd, gbitRxEnd);
 
     testInfo(QString("Test completed in ") + QString::number(elapsed) + " ms");
-    qulonglong pcieTxRate = ((((pcieTxEnd - pcieTxStart) * 8 * 1000) / elapsed) / 1024) / 1024;
-    qulonglong pcieRxRate = ((((pcieRxEnd - pcieRxStart) * 8 * 1000) / elapsed) / 1024) / 1024;
+    qulonglong usbTxRate = ((((usbTxEnd - usbTxStart) * 8 * 1000) / elapsed) / 1024) / 1024;
+    qulonglong usbRxRate = ((((usbRxEnd - usbRxStart) * 8 * 1000) / elapsed) / 1024) / 1024;
     qulonglong gbitTxRate = ((((gbitTxEnd - gbitTxStart) * 8 * 1000) / elapsed) / 1024) / 1024;
     qulonglong gbitRxRate = ((((gbitRxEnd - gbitRxStart) * 8 * 1000) / elapsed) / 1024) / 1024;
-    testInfo(QString() + "PCIe Tx/Rx: " + QString::number(pcieTxRate) + "/" + QString::number(pcieRxRate));
-    testInfo(QString() + "Gbit Tx/Rx: " + QString::number(gbitTxRate) + "/" + QString::number(gbitRxRate));
+    testInfo(QString() + "USB Tx/Rx: " + QString::number(usbTxRate) + "/" + QString::number(usbRxRate) + " Mbit/sec");
+    testInfo(QString() + "Gbit Tx/Rx: " + QString::number(gbitTxRate) + "/" + QString::number(gbitRxRate) + " Mbit/sec");
     
 
-    if (pcieTxRate < 20)
-        testError("PCIe Tx rate too low");
+    if (usbTxRate < 50)
+        testError("USB Tx rate too low");
 
-    if (pcieRxRate < 20)
-        testError("PCIe Rx rate too low");
+    if (usbRxRate < 50)
+        testError("USB Rx rate too low");
 
-    if (gbitTxRate < 20)
+    if (gbitTxRate < 50)
         testError("Gigabit Tx rate too low");
 
-    if (gbitRxRate < 20)
+    if (gbitRxRate < 50)
         testError("Gigabit Rx rate too low");
 
 }

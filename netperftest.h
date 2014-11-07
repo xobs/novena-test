@@ -10,9 +10,9 @@ public:
     void runTest();
 
     enum interface {
-	    GBit,
-	    PCIe,
-	    USB,
+        GBit,
+        WiFi,
+        USB,
     };
 
     static const QString getInterfaceName(enum interface iface);
