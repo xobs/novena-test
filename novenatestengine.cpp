@@ -108,9 +108,10 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
     tests.append(new MMCTestStart("/factory/novena-mmc-disk.img",
                                   MMCCopyThread::getInternalBlockName()));
-    tests.append(new WaitForNetwork());
+    tests.append(new WaitForNetwork(WaitForNetwork::WiFi));
     tests.append(new HWClockTestStart());
     tests.append(new EEPROMStart("http://bunniefoo.com:8674/getnew/", "es8328,pcie,gbit,hdmi"));
+    tests.append(new NetPerfTest());
     tests.append(new USBTest());
     tests.append(new FpgaTest());
     tests.append(new MMCTestFinish());
