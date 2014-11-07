@@ -19,6 +19,7 @@
 #include "netperftest.h"
 #include "eepromtest.h"
 #include "waitfornetwork.h"
+#include "timertest.h"
 #include "playmp3.h"
 
 class NovenaTest;
@@ -106,6 +107,7 @@ out:
 
 bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
+    tests.append(new TimerTestStart());
     tests.append(new MMCTestStart("/factory/novena-mmc-disk.img",
                                   MMCCopyThread::getInternalBlockName()));
     tests.append(new WaitForNetwork(WaitForNetwork::WiFi));
@@ -117,6 +119,7 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new MMCTestFinish());
     tests.append(new HWClockTestFinish());
     tests.append(new EEPROMFinish("http://bunniefoo.com:8674/assign/by-serial/%1/"));
+    tests.append(new TimerTestStop());
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
     tests.append(new PlayMP3("/factory/test_done_nyan.mp3"));
 
