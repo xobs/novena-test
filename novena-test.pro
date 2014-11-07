@@ -59,7 +59,8 @@ HEADERS  += novenatestwindow.h \
     fpgatest.h \
     waitfornetwork.h \
     playmp3.h \
-    hwclocktest.h
+    hwclocktest.h \
+    novena-eeprom.h
 
 FORMS    += novenatestwindow.ui
 
