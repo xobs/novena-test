@@ -34,7 +34,8 @@ SOURCES += main.cpp\
     hwclocktest.cpp \
     acceltest.cpp \
     keyboardmousetest.cpp \
-    stmpetest.cpp
+    stmpetest.cpp \
+    gpbbtest.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -66,7 +67,8 @@ HEADERS  += novenatestwindow.h \
     novena-eeprom.h \
     acceltest.h \
     keyboardmousetest.h \
-    stmpetest.h
+    stmpetest.h \
+    gpbbtest.h
 
 FORMS    += novenatestwindow.ui
 
