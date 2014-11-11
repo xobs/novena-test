@@ -32,7 +32,8 @@ SOURCES += main.cpp\
     waitfornetwork.cpp \
     playmp3.cpp \
     hwclocktest.cpp \
-    acceltest.cpp
+    acceltest.cpp \
+    keyboardmousetest.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -62,7 +63,8 @@ HEADERS  += novenatestwindow.h \
     playmp3.h \
     hwclocktest.h \
     novena-eeprom.h \
-    acceltest.h
+    acceltest.h \
+    keyboardmousetest.h
 
 FORMS    += novenatestwindow.ui
 
