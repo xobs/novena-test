@@ -5,7 +5,7 @@
 
 STMPETest::STMPETest()
 {
-    name = "Accelerometer Test";
+    name = "STMPE Test";
 }
 
 void STMPETest::runTest()
