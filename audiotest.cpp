@@ -2,8 +2,6 @@
 
 #include <QAudioOutput>
 #include <QAudioFormat>
-#include <QDebug>
-
 
 class PleasantSound : public QIODevice {
 
@@ -188,13 +186,21 @@ public:
                 break;
 
             default:
-                fprintf(stderr, "Unknown state: %d\n", state);
                 return -1;
             }
         }
         return 0;
     }
 };
+
+QAudioOutput *AudioTest::openAudioDevice(const QAudioDeviceInfo &info, const QAudioFormat &format) {
+    QAudioFormat f = format;
+
+    if (!info.isFormatSupported(f))
+        f = info.nearestFormat(f);
+
+    return new QAudioOutput(info, f, NULL);
+}
 
 AudioTest::AudioTest()
 {
@@ -208,59 +214,34 @@ AudioTest::AudioTest()
     format.setSampleSize(16);
     format.setCodec("audio/pcm");
     format.setByteOrder(QAudioFormat::LittleEndian);
-    format.setSampleType(QAudioFormat::UnSignedInt);
+    format.setSampleType(QAudioFormat::SignedInt);
 
-    qDebug() << "Listing audio devices:";
-    foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioOutput))
-        qDebug() << "Device name: " << deviceInfo.deviceName();
+    output = NULL;
+    foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioOutput)) {
+        if (deviceInfo.deviceName() == "alsa_output.platform-sound.analog-stereo")
+            output = openAudioDevice(deviceInfo, format);
 
-    QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
-
-    if (!info.isFormatSupported(format)) {
-        format = info.nearestFormat(format);
-        qWarning() << "Raw audio format not supported by backend, cannot play audio.";
-        qWarning() << "Format: " << format;
-
-
-//        return;
+        if (output)
+            break;
     }
 
-    output = new QAudioOutput(format, NULL);
+    /* No matching audio device found, open the default one */
+    if (!output)
+        output = openAudioDevice(QAudioDeviceInfo::defaultOutputDevice(), format);
 }
 
 void AudioTest::runTest() {
+
+    if (!output) {
+        testError("Couldn't open audio device");
+        return;
+    }
+
+    testInfo("Producing pleasant audio sounds");
     input = new PleasantSound(22050, 2, 1024);
     input->open(QIODevice::ReadOnly);
 
-//    connect(output, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    output->setBufferSize(524288);
     output->start(input);
+    output->setVolume(0.8);
 }
-
-#if 0
-void AudioTest::handleStateChanged(QAudio::State newState)
-{
-    switch (newState) {
-        case QAudio::IdleState:
-            // Finished playing (no more data)
-        qDebug() << "Fisnished playing (no more data)";
-        /*
-            audio->stop();
-            sourceFile.close();
-            delete audio;*/
-            break;
-
-        case QAudio::StoppedState:
-            // Stopped for other reasons
-            if (output->error() != QAudio::NoError) {
-                qDebug() << "Got an error";
-            }
-            else
-                qDebug() << "Stopped, for some reason (not an error)";
-            break;
-
-        default:
-            // ... other cases as appropriate
-            break;
-    }
-}
-#endif
