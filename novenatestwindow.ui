@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>NovenaTestWindow</string>
+   <string>Novena Factory Test</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
