@@ -1,8 +1,6 @@
+#include <QFile>
 #include "acceltest.h"
 
-#include <QFile>
-
-#include <QDebug>
 #define ACCEL_PATH "/sys/bus/iio/devices/iio:device0/"
 
 AccelTest::AccelTest()

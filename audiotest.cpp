@@ -99,7 +99,6 @@ public:
         double val = tones[index];
         //static int index = 0;
         //double val = tones[index++];
-        fprintf(stderr, "Val[%d]: %lf\n", index, val);
         if (index >= TONES_MAX)
             index = 0;
         return val;
@@ -211,15 +210,17 @@ AudioTest::AudioTest()
     format.setByteOrder(QAudioFormat::LittleEndian);
     format.setSampleType(QAudioFormat::UnSignedInt);
 
+    qDebug() << "Listing audio devices:";
+    foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioOutput))
+        qDebug() << "Device name: " << deviceInfo.deviceName();
+
     QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+
     if (!info.isFormatSupported(format)) {
         format = info.nearestFormat(format);
         qWarning() << "Raw audio format not supported by backend, cannot play audio.";
         qWarning() << "Format: " << format;
 
-        qDebug() << "Listing audio devices:";
-        foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioOutput))
-            qDebug() << "Device name: " << deviceInfo.deviceName();
 
 //        return;
     }
