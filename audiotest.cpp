@@ -244,4 +244,10 @@ void AudioTest::runTest() {
     output->setBufferSize(524288);
     output->start(input);
     output->setVolume(0.8);
+
+    /* Hacks */
+    system("amixer -c 1 set 'Right Mixer Right Bypass' unmute");
+    system("amixer -c 1 set 'Left Mixer Left Bypass' unmute");
+    system("amixer -c 1 set 'Output 1' 100%"); /* Headphone port 100% */
+    system("amixer -c 1 set 'Output 2' 75%");
 }
