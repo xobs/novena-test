@@ -529,6 +529,7 @@ quint16 GPBBTest::eimSet(unsigned int type, quint16 value)
 
 int GPBBTest::loadFpga(const QString &bitpath)
 {
+    testDebug("Exporting GPIO 135");
     QFile exportFile("/sys/class/gpio/export");
     if (!exportFile.open(QIODevice::WriteOnly)) {
         testError(QString() + "Unable to open GPIO export file: " + exportFile.errorString());
@@ -537,6 +538,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
     exportFile.write("135");
     exportFile.close();
 
+    testDebug("Making GPIO135 an output");
     QFile directionFile("/sys/class/gpio/gpio135/direction");
     if (!directionFile.open(QIODevice::WriteOnly)) {
         testError(QString() + "Unable to open GPIO135 direction file: " + directionFile.errorString());
@@ -545,6 +547,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
     directionFile.write("out\n");
     directionFile.close();
 
+    testDebug("Putting FPGA into reset");
     QFile valueFile("/sys/class/gpio/gpio135/value");
     if (!valueFile.open(QIODevice::WriteOnly)) {
         testError(QString() + "Unable to open GPIO135 value file: " + valueFile.errorString());
@@ -555,6 +558,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
 
     SleeperThread::msleep(200);
 
+    testDebug("Taking FPGA out of reset");
     if (!valueFile.open(QIODevice::WriteOnly)) {
         testError(QString() + "Unable to open GPIO135 value file: " + valueFile.errorString());
         return 1;
@@ -575,6 +579,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
         return 1;
     }
 
+    testDebug("Writing bitstream to FPGA");
     while(1) {
         QByteArray bytes = bitstreamFile.read(1024);
         if (bytes.length() == 0)
@@ -586,9 +591,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
     bitstreamFile.close();
     spiDev.close();
 
-    /* Dummy reads required because the first read is always corrupt */
-    eimGet(fpga_r_ddr3_v_major);
-    eimGet(fpga_r_ddr3_v_minor);
+    testDebug("Done programming FPGA");
 
     return 0;
 }
@@ -613,7 +616,7 @@ void GPBBTest::runTest()
     qint32 ver_major, ver_minor;
     qint32 adc_val;
 
-    testInfo("Loading FPGA firmware");
+    testInfo("Loading GPBB firmware");
     if (loadFpga("/factory/gpbb_fpga.bit"))
         return;
 
@@ -626,13 +629,18 @@ void GPBBTest::runTest()
     if (prepEim())
         return;
 
+    testDebug("Reading FPGA Major / Minor versions");
+    /* Dummy reads required because the first read is always corrupt */
+    eimGet(fpga_r_ddr3_v_major);
+    eimGet(fpga_r_ddr3_v_minor);
+
     ver_major = eimGet(fpga_r_ddr3_v_major);
     ver_minor = eimGet(fpga_r_ddr3_v_minor);
     testDebug(QString() + "GPBB Firmware version "
                         + QString::number(ver_major) + "."
                         + QString::number(ver_minor));
 
-    if ((ver_major != 2) || (ver_minor != 11)) {
+    if ((ver_major != 3) || (ver_minor != 11)) {
         testError("Unexpected version number");
         return;
     }
@@ -686,6 +694,15 @@ void GPBBTest::runTest()
         testError("ADC Channel 6 is ound of range!  Should be between 681 and 753");
         return;
     }
+
+    testInfo("Resetting FPGA");
+    QFile valueFile("/sys/class/gpio/gpio135/value");
+    if (!valueFile.open(QIODevice::WriteOnly)) {
+        testError(QString() + "Unable to open GPIO135 value file: " + valueFile.errorString());
+        return;
+    }
+    valueFile.write("0\n");
+    valueFile.close();
 
     testInfo("All GPBB tests passed");
 }
