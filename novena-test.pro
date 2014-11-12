@@ -16,10 +16,7 @@ TEMPLATE = app
 SOURCES += main.cpp\
     delayedtextprinttest.cpp \
     audiotest.cpp \
-    switchtest.cpp \
-    hdmitest.cpp \
-    fpga.c gpio.c \
-    wifitest.cpp \
+    gpio.c \
     novenatestwindow.cpp \
     novenatestengine.cpp \
     novenatest.cpp \
@@ -30,7 +27,6 @@ SOURCES += main.cpp\
     timertest.cpp \
     fpgatest.cpp \
     waitfornetwork.cpp \
-    playmp3.cpp \
     hwclocktest.cpp \
     acceltest.cpp \
     keyboardmousetest.cpp \
@@ -51,10 +47,6 @@ HEADERS  += novenatestwindow.h \
     novenatestengine.h \
     delayedtextprinttest.h \
     audiotest.h \
-    switchtest.h \
-    hdmitest.h \
-    wifitest.h \
-    fpga.h \
     mmctest.h \
     eepromtest.h \
     netperftest.h \
@@ -62,7 +54,6 @@ HEADERS  += novenatestwindow.h \
     timertest.h \
     fpgatest.h \
     waitfornetwork.h \
-    playmp3.h \
     hwclocktest.h \
     novena-eeprom.h \
     acceltest.h \

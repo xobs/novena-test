@@ -12,20 +12,19 @@
 
 /* Available Tests */
 #include "acceltest.h"
-#include "delayedtextprinttest.h"
-#include "mmctest.h"
-#include "usbtest.h"
 #include "audiotest.h"
-#include "keyboardmousetest.h"
-#include "hwclocktest.h"
+#include "delayedtextprinttest.h"
+#include "eepromtest.h"
 #include "fpgatest.h"
 #include "gpbbtest.h"
+#include "hwclocktest.h"
+#include "keyboardmousetest.h"
+#include "mmctest.h"
 #include "netperftest.h"
-#include "eepromtest.h"
-#include "waitfornetwork.h"
-#include "timertest.h"
 #include "stmpetest.h"
-#include "playmp3.h"
+#include "timertest.h"
+#include "usbtest.h"
+#include "waitfornetwork.h"
 
 class NovenaTest;
 class NovenaTestEngineThread : public QThread {
