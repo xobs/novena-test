@@ -11,15 +11,20 @@
 #include "novenatestwindow.h"
 
 /* Available Tests */
+#include "acceltest.h"
 #include "delayedtextprinttest.h"
 #include "mmctest.h"
 #include "usbtest.h"
+#include "audiotest.h"
+#include "keyboardmousetest.h"
 #include "hwclocktest.h"
 #include "fpgatest.h"
+#include "gpbbtest.h"
 #include "netperftest.h"
 #include "eepromtest.h"
 #include "waitfornetwork.h"
 #include "timertest.h"
+#include "stmpetest.h"
 #include "playmp3.h"
 
 class NovenaTest;
@@ -108,8 +113,12 @@ out:
 bool NovenaTestEngine::loadAllTests() {
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
     tests.append(new TimerTestStart());
+    tests.append(new STMPETest());
+    tests.append(new GPBBTest());
     tests.append(new MMCTestStart("/factory/novena-mmc-disk.img",
-                                  MMCCopyThread::getInternalBlockName()));
+                                 MMCCopyThread::getInternalBlockName()));
+    tests.append(new KeyboardMouseTest());
+    tests.append(new AccelTest());
     tests.append(new WaitForNetwork(WaitForNetwork::WiFi));
     tests.append(new HWClockTestStart());
     tests.append(new EEPROMStart("http://bunniefoo.com:8674/getnew/", "es8328,pcie,gbit,hdmi,eepromoops"));
@@ -120,9 +129,8 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new HWClockTestFinish());
     tests.append(new EEPROMFinish("http://bunniefoo.com:8674/assign/by-serial/%1/"));
     tests.append(new TimerTestStop());
+    tests.append(new AudioTest());
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
-    tests.append(new PlayMP3("/factory/test_done_nyan.mp3"));
-
     /* Wire up all signals and slots */
     int i;
     for (i=0; i<tests.count(); i++)
@@ -166,6 +174,10 @@ void NovenaTestEngine::updateTestState(const QString name, int level, int value,
     QString str;
     str.append("<p>");
     str.append(levelStr[level]);
+    str.append(" ");
+    str.append("<font color=\"#0044aa\">");
+    str.append(name);
+    str.append("</font>");
     str.append(": ");
     str.append(message);
     ui->addTestLog(str);
@@ -185,16 +197,12 @@ void NovenaTestEngine::updateTestState(const QString name, int level, int value,
         qDebug() << name << "????:" << level << value << message;
 }
 
-
-
 void NovenaTestEngine::cleanupCurrentTest() {
     delete currentThread;
     currentThread = NULL;
     runNextTest();
     return;
 }
-
-
 
 bool NovenaTestEngine::runNextTest(int continueOnErrors)
 {
@@ -211,6 +219,7 @@ bool NovenaTestEngine::runNextTest(int continueOnErrors)
     if (currentTestNumber >= testsToRun.count()) {
         ui->setProgressBar(1);
         ui->finishTests(errorCount?false:true);
+        emit testsFinished();
         return false;
     }
 
