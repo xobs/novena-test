@@ -16,7 +16,6 @@ TEMPLATE = app
 SOURCES += main.cpp\
     delayedtextprinttest.cpp \
     audiotest.cpp \
-    gpio.c \
     novenatestwindow.cpp \
     novenatestengine.cpp \
     novenatest.cpp \
