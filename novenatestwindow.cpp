@@ -1,33 +1,17 @@
 #include <QDebug>
 #include <QScrollBar>
-//#include <QCleanlooksStyle>
 #include <QStyle>
 #include <QFile>
 #include <QDir>
+#include <QProcess>
 
 #include "novenatestwindow.h"
 #include "ui_novenatestwindow.h"
-
-/*
-class BiggerScrollbar : public QCleanlooksStyle {
-
-public:
-    int pixelMetric(PixelMetric metric, const QStyleOption *, const QWidget *pWidget = 0) const
-    {
-        if ( metric == PM_ScrollBarExtent )
-        {
-           return 50;
-        }
-        return  QWindowsStyle::pixelMetric( metric, 0, pWidget );
-    }
-};
-*/
 
 NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::NovenaTestWindow)
 {
-    //QApplication::setStyle(new BiggerScrollbar);
 
     ui->setupUi(this);
 
@@ -43,7 +27,7 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     ui->lookingForUSBLabel->setVisible(true);
 
 #ifdef linux
-//    showFullScreen();
+    showMaximized();
 #endif
 
     engine = new NovenaTestEngine(this);
@@ -101,7 +85,7 @@ void NovenaTestWindow::openLogFile()
     testFile.append(".html");
 
     logFile.setFileName(currentDir.absoluteFilePath(testFile));
-    if (!logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+    if (!logFile.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text)) {
         qDebug() << "Unable to create logfile" << logFile.fileName();
         return;
     }
@@ -109,6 +93,32 @@ void NovenaTestWindow::openLogFile()
     logFile.write("<p>Started a new test\n");
     logFile.flush();
     return;
+}
+
+void NovenaTestWindow::postLogFile()
+{
+    system("cp /factory/factory-logs-key /tmp; chmod 0600 /tmp/factory-logs-key");
+    system("ip li set mtu 1200 dev wlan0");
+    QProcess sftp;
+
+    sftp.start("sftp", QStringList() << "-i" << "/tmp/factory-logs-key" << "factory-logs@bunniefoo.com");
+
+    if (!sftp.waitForStarted()) {
+        setStatusText("Unable to start sftp");
+        return;
+    }
+
+    sftp.write(QString("put %1\nexit\n").arg(logFile.fileName()).toUtf8());
+
+    if (!sftp.waitForFinished(INT_MAX)) {
+        setStatusText(sftp.readAllStandardError());
+        return;
+    }
+
+    if (sftp.exitCode()) {
+        setStatusText(sftp.readAllStandardError());
+        return;
+    }
 }
 
 void NovenaTestWindow::debugItemPressed(QListWidgetItem *)
@@ -211,8 +221,6 @@ void NovenaTestWindow::moveToMainScreen()
     ui->debugScreen->setVisible(false);
     ui->startScreen->setVisible(false);
 
-    QString str("");
-    addTestLog(str);
     QScrollBar *vert = ui->testLog->verticalScrollBar();
     vert->setValue(vert->maximum());
 }
@@ -272,6 +280,7 @@ void NovenaTestWindow::finishTests(bool successful)
     }
 
     logFile.close();
+    postLogFile();
 }
 
 void NovenaTestWindow::addTestLog(QString &message)

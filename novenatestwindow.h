@@ -22,31 +22,32 @@ public:
     void setStatusText(QString message);
     void setProgressBar(double progress);
     void setProgressText(QString &text);
-	void setErrorString(QString &message);
+    void setErrorString(QString &message);
     void addTestLog(QString &message);
-	void finishTests(bool successful);
+    void finishTests(bool successful);
 
 private:
     Ui::NovenaTestWindow *ui;
     NovenaTestEngine *engine;
-	QString errorString;
-	unsigned int sequencePosition;
-	QString serialLabelString;
-	QFile logFile;
+    QString errorString;
+    unsigned int sequencePosition;
+    QString serialLabelString;
+    QFile logFile;
 
-	void advanceDebugSequence(const char c);
-	void openLogFile();
+    void advanceDebugSequence(const char c);
+    void openLogFile();
+    void postLogFile();
 
 public slots:
     void startTests();
-	void debugMode1Clicked();
-	void debugMode2Clicked();
-	void debugMode3Clicked();
-	void debugItemPressed(QListWidgetItem *item);
-	void debugRunSelectedItems();
+    void debugMode1Clicked();
+    void debugMode2Clicked();
+    void debugMode3Clicked();
+    void debugItemPressed(QListWidgetItem *item);
+    void debugRunSelectedItems();
 
-	void moveToDebugScreen();
-	void moveToMainScreen();
+    void moveToDebugScreen();
+    void moveToMainScreen();
 };
 
 #endif // NOVENATESTWINDOW_H
