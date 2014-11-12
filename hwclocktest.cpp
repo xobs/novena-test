@@ -101,6 +101,8 @@ void HWClockTestStart::runTest()
         return;
     }
 
+    sysToRTC();
+
     testInfo("Will check the HW RTC after the copy is complete");
 }
 
