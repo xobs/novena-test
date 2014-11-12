@@ -1,0 +1,15 @@
+[Unit]
+Description=Novena Factory Test
+DefaultDependencies=no
+After=dbus.service network-pre.target systemd-sysusers.service
+Before=systemd-network.target network.target multi-user.target shutdown.target graphical.target systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Restart=no
+ExecStart=/usr/bin/startx /factory/runtest.sh
+User=root
+
+[Install]
+WantedBy=multi-user.target
