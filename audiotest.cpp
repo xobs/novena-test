@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QUrl>
 #include <QDebug>
+#include <unistd.h>
 
 AudioTest::AudioTest() : addSoundsTimer(this)
 {
@@ -19,7 +20,7 @@ AudioTest::AudioTest() : addSoundsTimer(this)
     }
     maxSounds = 5;
     addSoundsTimer.setSingleShot(false);
-    addSoundsTimer.setInterval(300);
+    addSoundsTimer.setInterval(400);
     connect(this, SIGNAL(startTimer()), &addSoundsTimer, SLOT(start()));
 }
 
@@ -60,22 +61,27 @@ void AudioTest::timerFinished(void)
     /* Only play a sound when we're below the maximum number of sounds, and
      * about 70% of the time.
      */
-    if ((playing.length() < maxSounds) && (randd() > 0.7)) {
-        QSound *fx = NULL;
+    if ((playing.length() < maxSounds)) {
+        qreal chance = randd();
+        qDebug() << "Chance of playing sound:" << chance;
+        if (chance > 0.3) {
+            usleep(randd() * 200000);
+            QSound *fx = NULL;
 
-        /* Try a few times to get a new sound to play, one that's not already playing */
-        for (int i = 0; i < 5; i++) {
-            QSound *newfx = sounds.at((int)(randd() * sounds.length()));
-            if (!playing.contains(newfx)) {
-                fx = newfx;
-                break;
+            /* Try a few times to get a new sound to play, one that's not already playing */
+            for (int i = 0; i < 5; i++) {
+                QSound *newfx = sounds.at((int)(randd() * sounds.length()));
+                if (!playing.contains(newfx)) {
+                    fx = newfx;
+                    break;
+                }
             }
-        }
 
-        if (fx) {
-            qDebug() << "Picked to start:" << fx->fileName();
-            fx->play();
-            playing.append(fx);
+            if (fx) {
+                qDebug() << "Picked to start:" << fx->fileName();
+                fx->play();
+                playing.append(fx);
+            }
         }
     }
     mutex.unlock();
