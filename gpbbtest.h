@@ -38,12 +38,12 @@ private:
     quint16 eimSet(unsigned int type, quint16 value);
 
     volatile quint16 *ranges[8];
-    int   *mem_32;
-    short *mem_16;
-    char  *mem_8;
+    volatile int   *mem_32;
+    volatile short *mem_16;
+    volatile char  *mem_8;
     int   mem_fd;
     int   fd;
-    int   *prev_mem_range;
+    volatile int   *prev_mem_range;
 
     quint8 cached_dout;
     quint8 cached_dir;

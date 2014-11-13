@@ -294,12 +294,12 @@ int GPBBTest::readKernelMemory(long offset, int virtualized, int size)
 {
     int result;
 
-    int *mem_range = (int *)(offset & ~0xFFFF);
+    volatile int *mem_range = (volatile int *)(offset & ~0xFFFF);
     if( mem_range != prev_mem_range ) {
         prev_mem_range = mem_range;
 
         if(mem_32)
-            munmap(mem_32, 0xFFFF);
+            munmap((void *)mem_32, 0xFFFF);
         if(mem_fd)
             close(mem_fd);
 
@@ -330,8 +330,8 @@ int GPBBTest::readKernelMemory(long offset, int virtualized, int size)
             mem_fd=0;
             return -1;
         }
-        mem_16 = (short *)mem_32;
-        mem_8  = (char  *)mem_32;
+        mem_16 = (volatile short *)mem_32;
+        mem_8  = (volatile char  *)mem_32;
     }
 
     int scaled_offset = (offset-(offset&~0xFFFF));
@@ -362,38 +362,38 @@ int GPBBTest::writeKernelMemory(long offset, long value, int virtualized, int si
 int GPBBTest::prepEim(void)
 {
     int i;
-
+    //  printf( "setting up EIM CS0 (register interface) pads and configuring timing\n" );
     // set up pads to be mapped to EIM
-    for (i = 0; i < 16; i++) {
-        writeKernelMemory(0x20e0114 + i*4, 0x0, 0, 4);  // mux mapping
-        writeKernelMemory(0x20e0428 + i*4, 0xb0b1, 0, 4); // pad strength config'd for a 100MHz rate 
+    for( i = 0; i < 16; i++ ) {
+      writeKernelMemory( 0x20e0114 + i*4, 0x0, 0, 4 );  // mux mapping
+      writeKernelMemory( 0x20e0428 + i*4, 0xb0b1, 0, 4 ); // pad strength config'd for a 100MHz rate
     }
 
     // mux mapping
-    writeKernelMemory(0x20e046c - 0x314, 0x0, 0, 4); // BCLK
-    writeKernelMemory(0x20e040c - 0x314, 0x0, 0, 4); // CS0
-    writeKernelMemory(0x20e0410 - 0x314, 0x0, 0, 4); // CS1
-    writeKernelMemory(0x20e0414 - 0x314, 0x0, 0, 4); // OE
-    writeKernelMemory(0x20e0418 - 0x314, 0x0, 0, 4); // RW
-    writeKernelMemory(0x20e041c - 0x314, 0x0, 0, 4); // LBA
-    writeKernelMemory(0x20e0468 - 0x314, 0x0, 0, 4); // WAIT
-    writeKernelMemory(0x20e0408 - 0x314, 0x0, 0, 4); // A16
-    writeKernelMemory(0x20e0404 - 0x314, 0x0, 0, 4); // A17
-    writeKernelMemory(0x20e0400 - 0x314, 0x0, 0, 4); // A18
+    writeKernelMemory( 0x20e046c - 0x314, 0x0, 0, 4 ); // BCLK
+    writeKernelMemory( 0x20e040c - 0x314, 0x0, 0, 4 ); // CS0
+    writeKernelMemory( 0x20e0410 - 0x314, 0x0, 0, 4 ); // CS1
+    writeKernelMemory( 0x20e0414 - 0x314, 0x0, 0, 4 ); // OE
+    writeKernelMemory( 0x20e0418 - 0x314, 0x0, 0, 4 ); // RW
+    writeKernelMemory( 0x20e041c - 0x314, 0x0, 0, 4 ); // LBA
+    writeKernelMemory( 0x20e0468 - 0x314, 0x0, 0, 4 ); // WAIT
+    writeKernelMemory( 0x20e0408 - 0x314, 0x0, 0, 4 ); // A16
+    writeKernelMemory( 0x20e0404 - 0x314, 0x0, 0, 4 ); // A17
+    writeKernelMemory( 0x20e0400 - 0x314, 0x0, 0, 4 ); // A18
 
     // pad strength
-    writeKernelMemory(0x20e046c, 0xb0b1, 0, 4); // BCLK
-    writeKernelMemory(0x20e040c, 0xb0b1, 0, 4); // CS0
-    writeKernelMemory(0x20e0410, 0xb0b1, 0, 4); // CS1
-    writeKernelMemory(0x20e0414, 0xb0b1, 0, 4); // OE
-    writeKernelMemory(0x20e0418, 0xb0b1, 0, 4); // RW
-    writeKernelMemory(0x20e041c, 0xb0b1, 0, 4); // LBA
-    writeKernelMemory(0x20e0468, 0xb0b1, 0, 4); // WAIT
-    writeKernelMemory(0x20e0408, 0xb0b1, 0, 4); // A16
-    writeKernelMemory(0x20e0404, 0xb0b1, 0, 4); // A17
-    writeKernelMemory(0x20e0400, 0xb0b1, 0, 4); // A18
+    writeKernelMemory( 0x20e046c, 0xb0b1, 0, 4 ); // BCLK
+    writeKernelMemory( 0x20e040c, 0xb0b1, 0, 4 ); // CS0
+    writeKernelMemory( 0x20e0410, 0xb0b1, 0, 4 ); // CS1
+    writeKernelMemory( 0x20e0414, 0xb0b1, 0, 4 ); // OE
+    writeKernelMemory( 0x20e0418, 0xb0b1, 0, 4 ); // RW
+    writeKernelMemory( 0x20e041c, 0xb0b1, 0, 4 ); // LBA
+    writeKernelMemory( 0x20e0468, 0xb0b1, 0, 4 ); // WAIT
+    writeKernelMemory( 0x20e0408, 0xb0b1, 0, 4 ); // A16
+    writeKernelMemory( 0x20e0404, 0xb0b1, 0, 4 ); // A17
+    writeKernelMemory( 0x20e0400, 0xb0b1, 0, 4 ); // A18
 
-    writeKernelMemory(0x020c4080, 0xcf3, 0, 4); // ungate eim slow clocks
+    writeKernelMemory( 0x020c4080, 0xcf3, 0, 4 ); // ungate eim slow clocks
 
     // rework timing for sync use
     // 0011 0  001 1   001    0   001 00  00  1  011  1    0   1   1   1   1   1   1
@@ -420,16 +420,16 @@ int GPBBTest::prepEim(void)
     // CSEN = 1    chip select is enabled
 
     //  writeKernelMemory( 0x21b8000, 0x5191C0B9, 0, 4 );
-    writeKernelMemory(0x21b8000, 0x31910BBF, 0, 4);
+    writeKernelMemory( 0x21b8000, 0x31910BBF, 0, 4 );
 
-    // EIM_CS0GCR2   
+    // EIM_CS0GCR2
     //  MUX16_BYP_GRANT = 1
     //  ADH = 1 (1 cycles)
     //  0x1001
-    writeKernelMemory(0x21b8004, 0x1000, 0, 4);
+    writeKernelMemory( 0x21b8004, 0x1000, 0, 4 );
 
 
-    // EIM_CS0RCR1   
+    // EIM_CS0RCR1
     // 00 000101 0 000   0   000   0 000 0 000 0 000 0 000
     //    RWSC     RADVA RAL RADVN   OEA   OEN   RCSA  RCSN
     // RWSC 000101    5 cycles for reads to happen
@@ -437,12 +437,11 @@ int GPBBTest::prepEim(void)
     // 0000 0111 0000   0011   0000 0000 0000 0000
     //  0    7     0     3      0  0    0    0
     // 0000 0101 0000   0000   0 000 0 000 0 000 0 000
-    writeKernelMemory(0x21b8008, 0x05000000, 0, 4);
-    writeKernelMemory(0x21b8008, 0x0A024000, 0, 4);
-    writeKernelMemory(0x21b8008, 0x09014000, 0, 4);
-
-    // EIM_CS0RCR2  
-    // 0000 0000 0   000 00 00 0 010  0 001 
+  //  writeKernelMemory( 0x21b8008, 0x05000000, 0, 4 );
+  //  writeKernelMemory( 0x21b8008, 0x0A024000, 0, 4 );
+    writeKernelMemory( 0x21b8008, 0x09014000, 0, 4 );
+    // EIM_CS0RCR2
+    // 0000 0000 0   000 00 00 0 010  0 001
     //           APR PAT    RL   RBEA   RBEN
     // APR = 0   mandatory because MUM = 1
     // PAT = XXX because APR = 0
@@ -450,7 +449,7 @@ int GPBBTest::prepEim(void)
     // RBEA = 000  these match RCSA/RCSN from previous field
     // RBEN = 000
     // 0000 0000 0000 0000 0000  0000
-    writeKernelMemory(0x21b800c, 0x00000000, 0, 4);
+    writeKernelMemory( 0x21b800c, 0x00000000, 0, 4 );
 
     // EIM_CS0WCR1
     // 0   0    000100 000   000   000  000  010 000 000  000
@@ -473,21 +472,18 @@ int GPBBTest::prepEim(void)
     // 0000 0100 0000 0000 0000  0100 0000 0000
     //  0    4    0    0     0    4     0    0
 
-    writeKernelMemory(0x21b8010, 0x09080800, 0, 4);
+    writeKernelMemory( 0x21b8010, 0x09080800, 0, 4 );
     //  writeKernelMemory( 0x21b8010, 0x02040400, 0, 4 );
 
     // EIM_WCR
     // BCM = 1   free-run BCLK
     // GBCD = 0  don't divide the burst clock
-    writeKernelMemory(0x21b8090, 0x701, 0, 4);
+    writeKernelMemory( 0x21b8090, 0x701, 0, 4 );
 
-    // EIM_WIAR 
+    // EIM_WIAR
     // ACLK_EN = 1
-    writeKernelMemory(0x21b8094, 0x10, 0, 4);
+    writeKernelMemory( 0x21b8094, 0x10, 0, 4 );
 
-    /* Dummy reads to fix a first-byte-invalid bug */
-    eimGet(fpga_r_ddr3_v_minor);
-    eimGet(fpga_r_ddr3_v_major);
     return 0;
 }
 
@@ -497,7 +493,7 @@ volatile quint16 *GPBBTest::eimOpen(unsigned int type)
     int range = (type >> 16) & 7;
 
     if (ranges[range])
-        return ((quint16 *) (((quint8 *)ranges[range])+(type&0xffff)));
+        return ((volatile quint16 *) (((volatile quint8 *)ranges[range])+(type&0xffff)));
 
     fd = open("/dev/mem", O_RDWR);
     if (fd == -1) {
@@ -556,7 +552,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
     valueFile.write("0\n");
     valueFile.close();
 
-    SleeperThread::msleep(200);
+    SleeperThread::msleep(500);
 
     testDebug("Taking FPGA out of reset");
     if (!valueFile.open(QIODevice::WriteOnly)) {
@@ -565,7 +561,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
     }
     valueFile.write("1\n");
     valueFile.close();
-    SleeperThread::msleep(200);
+    SleeperThread::msleep(500);
 
     QFile bitstreamFile(bitpath);
     if (!bitstreamFile.open(QIODevice::ReadOnly)) {
@@ -581,7 +577,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
 
     testDebug("Writing bitstream to FPGA");
     while(1) {
-        QByteArray bytes = bitstreamFile.read(1024);
+        QByteArray bytes = bitstreamFile.read(128);
         if (bytes.length() == 0)
             break;
         spiDev.write(bytes);
@@ -598,7 +594,7 @@ int GPBBTest::loadFpga(const QString &bitpath)
 
 GPBBTest::GPBBTest()
 {
-    name = "FPGA Test";
+    name = "GPBB Test";
     memset(ranges, 0, sizeof(ranges));
     mem_32 = 0;
     mem_16 = 0;
@@ -615,36 +611,43 @@ void GPBBTest::runTest()
 {
     qint32 ver_major, ver_minor;
     qint32 adc_val;
+    int tries;
 
-    testInfo("Loading GPBB firmware");
-    if (loadFpga("/factory/gpbb_fpga.bit"))
-        return;
+    /* For unknown reasons, this sequence must be performed multiple times */
+    bool version_success = false;
+    for (tries = 0; tries < 5; tries++) {
+        testInfo("Loading GPBB firmware");
+        if (loadFpga("/factory/gpbb_fpga.bit"))
+            return;
 
-    errno = 0;
-    testDebug("Turning on clock to FPGA");
-    writeKernelMemory(0x020c8160, 0x00000D2B, 0, 4);
-    if (errno)
-        return;
+        if (prepEim())
+            return;
 
-    if (prepEim())
-        return;
+        errno = 0;
+        testDebug("Turning on clock to FPGA");
+        writeKernelMemory(0x020c8160, 0x00000D2B, 0, 4);
+        if (errno)
+            return;
 
-    testDebug("Reading FPGA Major / Minor versions");
-    /* Dummy reads required because the first read is always corrupt */
-    eimGet(fpga_r_ddr3_v_major);
-    eimGet(fpga_r_ddr3_v_minor);
-    SleeperThread::msleep(200);
-    eimGet(fpga_r_ddr3_v_major);
-    eimGet(fpga_r_ddr3_v_minor);
-    SleeperThread::msleep(200);
+        /* Dummy reads required because the first few reads are always corrupt */
+        eimGet(fpga_r_ddr3_v_major);
+        eimGet(fpga_r_ddr3_v_minor);
 
-    ver_major = eimGet(fpga_r_ddr3_v_major);
-    ver_minor = eimGet(fpga_r_ddr3_v_minor);
+        ver_major = eimGet(fpga_r_ddr3_v_major);
+        ver_minor = eimGet(fpga_r_ddr3_v_minor);
+
+        if (ver_major == 3 && ver_minor == 11) {
+            version_success = true;
+            break;
+        }
+    }
+
     testDebug(QString() + "GPBB Firmware version "
                         + QString::number(ver_major) + "."
-                        + QString::number(ver_minor));
+                        + QString::number(ver_minor) + " after "
+                        + QString::number(tries) + " tries");
 
-    if ((ver_major != 3) || (ver_minor != 11)) {
+    if (!version_success) {
         testError("Unexpected version number");
         return;
     }
