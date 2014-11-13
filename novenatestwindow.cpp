@@ -97,8 +97,10 @@ void NovenaTestWindow::openLogFile()
 
 void NovenaTestWindow::postLogFile()
 {
-    system("cp /factory/factory-logs-key /tmp; chmod 0600 /tmp/factory-logs-key");
-    system("ip li set mtu 1200 dev wlan0");
+    system("cp /factory/factory-logs-key /tmp");
+    system("chown root:root /tmp/factory-logs-key");
+    system("chmod 0600 /tmp/factory-logs-key");
+    system("ip li set mtu 492 dev wlan0");
     QProcess sftp;
 
     sftp.start("sftp", QStringList() << "-i" << "/tmp/factory-logs-key" << "factory-logs@bunniefoo.com");
@@ -110,7 +112,7 @@ void NovenaTestWindow::postLogFile()
 
     sftp.write(QString("put %1\nexit\n").arg(logFile.fileName()).toUtf8());
 
-    if (!sftp.waitForFinished(INT_MAX)) {
+    if (!sftp.waitForFinished()) {
         setStatusText(sftp.readAllStandardError());
         return;
     }
