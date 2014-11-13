@@ -633,6 +633,10 @@ void GPBBTest::runTest()
     /* Dummy reads required because the first read is always corrupt */
     eimGet(fpga_r_ddr3_v_major);
     eimGet(fpga_r_ddr3_v_minor);
+    SleeperThread::msleep(200);
+    eimGet(fpga_r_ddr3_v_major);
+    eimGet(fpga_r_ddr3_v_minor);
+    SleeperThread::msleep(200);
 
     ver_major = eimGet(fpga_r_ddr3_v_major);
     ver_minor = eimGet(fpga_r_ddr3_v_minor);
