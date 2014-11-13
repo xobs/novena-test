@@ -80,38 +80,3 @@ void AudioTest::timerFinished(void)
     }
     mutex.unlock();
 }
-
-#if 0
-void AudioTest::soundFinished(void)
-{
-    if (!mutex.tryLock())
-        return;
-
-    for (int i = 0; i < playing.length(); i++) {
-        QSoundEffect *fx = playing.at(i);
-        if (fx->isPlaying()) {
-            qDebug() << "Sound" << fx->source() << "is still playing";
-            continue;
-        }
-        playing.removeAt(i);
-        i--;
-    }
-
-    if (playing.length() < max_sounds) {
-        QSoundEffect *next = sounds.at(rand() % sounds.length());
-        playing.append(next);
-        next->play();
-    }
-    qDebug() << "Sounds playing:" << playing.length() << "/" << max_sounds;
-    mutex.unlock();
-}
-
-void AudioTest::statusChanged(void)
-{
-    testDebug("Status of audio device changed");
-    for (int i = 0; i < sounds.length(); i++) {
-        QSoundEffect *fx = sounds.at(i);
-        qDebug() << fx->status();
-    }
-}
-#endif

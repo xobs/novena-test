@@ -7,6 +7,7 @@
 
 #include "novenatestwindow.h"
 #include "ui_novenatestwindow.h"
+#include "waitfornetwork.h"
 
 NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -100,7 +101,7 @@ void NovenaTestWindow::postLogFile()
     system("cp /factory/factory-logs-key /tmp");
     system("chown root:root /tmp/factory-logs-key");
     system("chmod 0600 /tmp/factory-logs-key");
-    system("ip li set mtu 492 dev wlan0");
+    system(QString("ip li set mtu 492 dev %1").arg(WaitForNetwork::getInterfaceName(WaitForNetwork::WiFi)).toUtf8());
     QProcess sftp;
 
     sftp.start("sftp", QStringList() << "-i" << "/tmp/factory-logs-key" << "factory-logs@bunniefoo.com");
