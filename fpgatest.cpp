@@ -41,12 +41,12 @@ int FpgaTest::readKernelMemory(long offset, int virtualized, int size)
 {
     int result;
 
-    int *mem_range = (int *)(offset & ~0xFFFF);
+    volatile int *mem_range = (volatile int *)(offset & ~0xFFFF);
     if( mem_range != prev_mem_range ) {
         prev_mem_range = mem_range;
 
         if(mem_32)
-            munmap(mem_32, 0xFFFF);
+            munmap((void *)mem_32, 0xFFFF);
         if(mem_fd)
             close(mem_fd);
 
@@ -77,8 +77,8 @@ int FpgaTest::readKernelMemory(long offset, int virtualized, int size)
             mem_fd=0;
             return -1;
         }
-        mem_16 = (short *)mem_32;
-        mem_8  = (char  *)mem_32;
+        mem_16 = (volatile short *)mem_32;
+        mem_8  = (volatile char  *)mem_32;
     }
 
     int scaled_offset = (offset-(offset&~0xFFFF));
@@ -239,12 +239,12 @@ int FpgaTest::prepEim(void)
 }
 
 
-quint16 *FpgaTest::eimOpen(unsigned int type)
+volatile quint16 *FpgaTest::eimOpen(unsigned int type)
 {
     int range = (type >> 16) & 7;
 
     if (ranges[range])
-        return ((quint16 *) (((quint8 *)ranges[range])+(type&0xffff)));
+        return ((volatile quint16 *) (((volatile quint8 *)ranges[range])+(type&0xffff)));
 
     fd = open("/dev/mem", O_RDWR);
     if (fd == -1) {
@@ -252,7 +252,7 @@ quint16 *FpgaTest::eimOpen(unsigned int type)
         return NULL;
     }
 
-    ranges[range] = (quint16 *)mmap(NULL, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, fd, EIM_BASE+(type&0xffff0000));
+    ranges[range] = (volatile quint16 *)mmap(NULL, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, fd, EIM_BASE+(type&0xffff0000));
     if (ranges[range] == ((quint16 *)-1)) {
         testError(QString() + "Couldn't mmap EIM region: " + strerror(errno));
         return NULL;
@@ -268,7 +268,7 @@ quint16 FpgaTest::eimGet(unsigned int type)
 
 quint16 FpgaTest::eimSet(unsigned int type, quint16 value)
 {
-    quint16 *ptr = eimOpen(type);
+    volatile quint16 *ptr = eimOpen(type);
     quint16 old = *ptr;
     *ptr = value;
     return old;
@@ -323,7 +323,7 @@ int FpgaTest::loadFpga(const QString &bitpath)
     }
 
     while(1) {
-        QByteArray bytes = bitstreamFile.read(1024);
+        QByteArray bytes = bitstreamFile.read(128);
         if (bytes.length() == 0)
             break;
         spiDev.write(bytes);
@@ -530,21 +530,42 @@ FpgaTest::FpgaTest()
 void FpgaTest::runTest()
 {
     testInfo("Loading FPGA firmware");
-    if (loadFpga("/factory/novena_fpga-1.22.bit"))
-        return;
 
-    errno = 0;
-    testDebug("Turning on clock to FPGA");
-    writeKernelMemory(0x020c8160, 0x00000D2B, 0, 4);
-    if (errno)
-        return;
+    bool success = false;
+    int tries;
+    quint16 ver_major;
+    quint16 ver_minor;
 
-    if (prepEim())
-        return;
+    for (tries = 0; tries < 5; tries++) {
+        if (loadFpga("/factory/novena_fpga-1.22.bit"))
+            return;
+
+        errno = 0;
+        testDebug("Turning on clock to FPGA");
+        writeKernelMemory(0x020c8160, 0x00000D2B, 0, 4);
+        if (errno)
+            return;
+
+        if (prepEim())
+            return;
+
+        ver_major = eimGet(fpga_r_ddr3_v_major);
+        ver_minor = eimGet(fpga_r_ddr3_v_minor);
+
+        if ((ver_major != 0) && (ver_minor != 0) && (ver_major != 65535) && (ver_minor != 65535)) {
+            success = true;
+            break;
+        }
+    }
 
     testDebug(QString() + "FPGA Firmware version "
-                        + QString::number(eimGet(fpga_r_ddr3_v_major)) + "."
-                        + QString::number(eimGet(fpga_r_ddr3_v_minor)));
+                        + QString::number(ver_major) + "."
+                        + QString::number(ver_minor));
+
+    if (!success) {
+        testError("Unrecognized version number");
+        return;
+    }
 
     /* Fill an array of values from 0 to 256, to use as test data */
     QByteArray dataToTest;
