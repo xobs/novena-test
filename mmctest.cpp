@@ -148,7 +148,7 @@ int MMCCopyThread::resizeRoot()
     QProcess resize2fs;
     infoMessage("Checking disk");
 
-    resize2fs.start("resize2fs", QStringList() << QString("%1-part3").arg(outputImage.fileName()));
+    resize2fs.start("resize2fs", QStringList() << "-f" << QString("%1-part3").arg(outputImage.fileName()));
 
     if (!resize2fs.waitForStarted())
         errorOut("Unable to start resize2fs");
