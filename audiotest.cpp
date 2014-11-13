@@ -4,7 +4,6 @@
 #include <QDir>
 #include <QUrl>
 #include <QDebug>
-#include <QSound>
 
 AudioTest::AudioTest() : addSoundsTimer(this)
 {
@@ -13,10 +12,9 @@ AudioTest::AudioTest() : addSoundsTimer(this)
     QDir soundDir("/factory/files/sounds/");
     foreach (QFileInfo fileInfo, soundDir.entryInfoList()) {
         if (fileInfo.fileName().endsWith("wav")) {
-            QSoundEffect *newEffect = new QSoundEffect();
-            newEffect->setSource(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+            QSound *newSound = new QSound(fileInfo.absoluteFilePath());
             qDebug() << "Loading sound" << fileInfo.absoluteFilePath();
-            sounds.append(newEffect);
+            sounds.append(newSound);
         }
     }
     maxSounds = 5;
@@ -50,11 +48,11 @@ void AudioTest::timerFinished(void)
     mutex.lock();
 
     /* Remove any not-playing sounds */
-    QMutableListIterator<QSoundEffect *> iterator(playing);
+    QMutableListIterator<QSound *> iterator(playing);
     while (iterator.hasNext()) {
-        QSoundEffect *fx = iterator.next();
-        if (!fx->isPlaying()) {
-            qDebug() << "Finished:" << fx->source();
+        QSound *fx = iterator.next();
+        if (fx->isFinished()) {
+            qDebug() << "Finished:" << fx->fileName();
             iterator.remove();
         }
     }
@@ -63,11 +61,11 @@ void AudioTest::timerFinished(void)
      * about 70% of the time.
      */
     if ((playing.length() < maxSounds) && (randd() > 0.7)) {
-        QSoundEffect *fx = NULL;
+        QSound *fx = NULL;
 
         /* Try a few times to get a new sound to play, one that's not already playing */
         for (int i = 0; i < 5; i++) {
-            QSoundEffect *newfx = sounds.at((int)(randd() * sounds.length()));
+            QSound *newfx = sounds.at((int)(randd() * sounds.length()));
             if (!playing.contains(newfx)) {
                 fx = newfx;
                 break;
@@ -75,10 +73,45 @@ void AudioTest::timerFinished(void)
         }
 
         if (fx) {
-            qDebug() << "Picked to start:" << fx->source();
+            qDebug() << "Picked to start:" << fx->fileName();
             fx->play();
             playing.append(fx);
         }
     }
     mutex.unlock();
 }
+
+#if 0
+void AudioTest::soundFinished(void)
+{
+    if (!mutex.tryLock())
+        return;
+
+    for (int i = 0; i < playing.length(); i++) {
+        QSoundEffect *fx = playing.at(i);
+        if (fx->isPlaying()) {
+            qDebug() << "Sound" << fx->source() << "is still playing";
+            continue;
+        }
+        playing.removeAt(i);
+        i--;
+    }
+
+    if (playing.length() < max_sounds) {
+        QSoundEffect *next = sounds.at(rand() % sounds.length());
+        playing.append(next);
+        next->play();
+    }
+    qDebug() << "Sounds playing:" << playing.length() << "/" << max_sounds;
+    mutex.unlock();
+}
+
+void AudioTest::statusChanged(void)
+{
+    testDebug("Status of audio device changed");
+    for (int i = 0; i < sounds.length(); i++) {
+        QSoundEffect *fx = sounds.at(i);
+        qDebug() << fx->status();
+    }
+}
+#endif

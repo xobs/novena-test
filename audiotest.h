@@ -1,27 +1,34 @@
 #ifndef AUDIOTEST_H
 #define AUDIOTEST_H
 
+#include <QSound>
+#include <QList>
+#include <QMutex>
+#include <QTimer>
 #include "novenatest.h"
-
-class QAudioOutput;
-class PleasantSound;
-class QAudioDeviceInfo;
-class QAudioFormat;
 
 class AudioTest : public NovenaTest
 {
 	Q_OBJECT
 
-    QAudioOutput *output;
-    PleasantSound *input;
-    QAudioOutput *openAudioDevice(const QAudioDeviceInfo &info, const QAudioFormat &format);
+    QList<QSound *> sounds;
+    QList<QSound *> playing;
+    int maxSounds;
+    QMutex mutex;
+    QTimer addSoundsTimer;
 
 public:
     AudioTest();
     void runTest();
 
-//public slots:
-//    void handleStateChanged(QAudio::State newState);
+public slots:
+//    void soundFinished(void);
+//    void statusChanged(void);
+    void timerFinished(void);
+    qreal randd(void);
+
+signals:
+    void startTimer();
 };
 
 #endif // AUDIOTEST_H
