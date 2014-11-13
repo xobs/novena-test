@@ -33,11 +33,11 @@ private:
     int writeKernelMemory(long offset, long value, int virtualized, int size);
     int prepEim(void);
     int loadFpga(const QString &bitpath);
-    quint16 *eimOpen(unsigned int type);
+    volatile quint16 *eimOpen(unsigned int type);
     quint16 eimGet(unsigned int type);
     quint16 eimSet(unsigned int type, quint16 value);
 
-    quint16 *ranges[8];
+    volatile quint16 *ranges[8];
     int   *mem_32;
     short *mem_16;
     char  *mem_8;

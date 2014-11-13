@@ -492,7 +492,7 @@ int GPBBTest::prepEim(void)
 }
 
 
-quint16 *GPBBTest::eimOpen(unsigned int type)
+volatile quint16 *GPBBTest::eimOpen(unsigned int type)
 {
     int range = (type >> 16) & 7;
 
@@ -505,7 +505,7 @@ quint16 *GPBBTest::eimOpen(unsigned int type)
         return NULL;
     }
 
-    ranges[range] = (quint16 *)mmap(NULL, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, fd, EIM_BASE+(type&0xffff0000));
+    ranges[range] = (volatile quint16 *)mmap(NULL, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, fd, EIM_BASE+(type&0xffff0000));
     if (ranges[range] == ((quint16 *)-1)) {
         testError(QString() + "Couldn't mmap EIM region: " + strerror(errno));
         return NULL;
@@ -521,7 +521,7 @@ quint16 GPBBTest::eimGet(unsigned int type)
 
 quint16 GPBBTest::eimSet(unsigned int type, quint16 value)
 {
-    quint16 *ptr = eimOpen(type);
+    volatile quint16 *ptr = eimOpen(type);
     quint16 old = *ptr;
     *ptr = value;
     return old;
