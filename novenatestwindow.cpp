@@ -104,7 +104,11 @@ void NovenaTestWindow::postLogFile()
     system(QString("ip li set mtu 492 dev %1").arg(WaitForNetwork::getInterfaceName(WaitForNetwork::WiFi)).toUtf8());
     QProcess sftp;
 
-    sftp.start("sftp", QStringList() << "-i" << "/tmp/factory-logs-key" << "factory-logs@bunniefoo.com");
+    sftp.start("sftp", QStringList()
+               << "-o" << "UserKnownHostsFile=/dev/null"
+               << "-o" << "StrictHostKeyChecking=no"
+               << "-i" << "/tmp/factory-logs-key"
+               << "factory-logs@bunniefoo.com");
 
     if (!sftp.waitForStarted()) {
         setStatusText("Unable to start sftp");
