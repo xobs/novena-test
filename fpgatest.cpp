@@ -536,7 +536,7 @@ void FpgaTest::runTest()
     quint16 ver_major;
     quint16 ver_minor;
 
-    for (tries = 0; tries < 5; tries++) {
+    for (tries = 0; tries < 50; tries++) {
         if (loadFpga("/factory/novena_fpga-1.22.bit"))
             return;
 
