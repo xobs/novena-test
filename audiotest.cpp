@@ -10,7 +10,7 @@ AudioTest::AudioTest() : addSoundsTimer(this)
 {
     name = "Audio";
 
-    QDir soundDir("/factory/files/sounds/");
+    QDir soundDir("/factory/sounds/");
     foreach (QFileInfo fileInfo, soundDir.entryInfoList()) {
         if (fileInfo.fileName().endsWith("wav")) {
             QSound *newSound = new QSound(fileInfo.absoluteFilePath());
