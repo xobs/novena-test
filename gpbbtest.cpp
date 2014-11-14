@@ -615,7 +615,7 @@ void GPBBTest::runTest()
 
     /* For unknown reasons, this sequence must be performed multiple times */
     bool version_success = false;
-    for (tries = 0; tries < 5; tries++) {
+    for (tries = 0; tries < 50; tries++) {
         testInfo("Loading GPBB firmware");
         if (loadFpga("/factory/gpbb_fpga.bit"))
             return;
