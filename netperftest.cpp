@@ -108,11 +108,14 @@ int NetPerfTest::setMTU(const QString &iface)
 
     if (!ifconfig.waitForFinished()) {
         testError("ifconfig returned an error");
+        testError(ifconfig.readAllStandardError());
         return 1;
     }
 
     if (ifconfig.exitCode()) {
-        testError("ifconfig exited with a nonzero result");
+        testError("ifconfig exited with a nonzero result: "
+			+ QString::number(ifconfig.exitCode()));
+        testError(ifconfig.readAllStandardError());
         return 1;
     }
 
@@ -138,11 +141,14 @@ int NetPerfTest::setIPAddress(const QString &iface, const QString &address)
 
     if (!ifconfig.waitForFinished()) {
         testError("ifconfig returned an error");
+        testError(ifconfig.readAllStandardError());
         return 1;
     }
 
     if (ifconfig.exitCode()) {
-        testError("ifconfig exited with a nonzero result");
+        testError("ifconfig exited with a nonzero result: "
+			+ QString::number(ifconfig.exitCode()));
+        testError(ifconfig.readAllStandardError());
         return 1;
     }
 
