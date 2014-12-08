@@ -399,3 +399,60 @@ void EEPROMFinish::runTest()
     eeprom_close(&dev);
     testInfo("Done");
 }
+
+EEPROMUpdate::EEPROMUpdate(QString features)
+{
+    name = "EEPROM update";
+    _features = features;
+}
+
+void EEPROMUpdate::runTest()
+{
+    int ret;
+    int feat;
+
+    testInfo("Trying to open I2C");
+    dev = eeprom_open(I2C_BUS, EEPROM_ADDRESS);
+    if (!dev) {
+        testError(QString("Unable to communicate over I2C: %1").arg(strerror(errno)));
+        return;
+    }
+
+    ret = eeprom_read(dev);
+    if (ret) {
+        testError(QString("Unable to communicate with EEPROM: %1").arg(strerror(errno)));
+        return;
+    }
+
+    feat = parse_features(_features.toUtf8());
+    if (feat == -1) {
+        testError("Invalid feature string");
+        return;
+    }
+
+    if (dev->data.features & feature_retina) {
+        dev->data.lvds1.frequency = 148500000;
+        dev->data.lvds1.hactive = 1920;
+        dev->data.lvds1.vactive = 1080;
+        dev->data.lvds1.hback_porch = 148;
+        dev->data.lvds1.hfront_porch = 88;
+        dev->data.lvds1.hsync_len = 44;
+        dev->data.lvds1.vback_porch = 36;
+        dev->data.lvds1.vfront_porch = 4;
+        dev->data.lvds1.vsync_len = 5;
+        dev->data.lvds1.flags = vsync_polarity | hsync_polarity
+                                 | data_width_8bit | mapping_jeida
+                                 | dual_channel | channel_present;
+
+        dev->data.lvds2.flags = channel_present;
+    }
+
+    testDebug("Writing EEPROM data to chip");
+    if (eeprom_write(dev)) {
+        testError(QString("Unable to write EEPROM data: %1").arg(strerror(errno)));
+        return;
+    }
+
+    eeprom_close(&dev);
+    testInfo("Done");
+}

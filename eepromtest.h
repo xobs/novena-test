@@ -26,4 +26,14 @@ public:
 };
 
 
+class EEPROMUpdate : public NovenaTest
+{
+private:
+    QString _features;
+
+public:
+    EEPROMUpdate(QString features);
+    void runTest();
+};
+
 #endif // EEPROMTEST_H
