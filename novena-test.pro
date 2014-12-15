@@ -30,7 +30,12 @@ SOURCES += main.cpp\
     acceltest.cpp \
     keyboardmousetest.cpp \
     stmpetest.cpp \
-    gpbbtest.cpp
+    gpbbtest.cpp \
+    destructivedisktest.cpp \
+    programsenoko.cpp \
+    buttontest.cpp \
+    capacitytest.cpp \
+    packageinstaller.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -58,7 +63,12 @@ HEADERS  += novenatestwindow.h \
     acceltest.h \
     keyboardmousetest.h \
     stmpetest.h \
-    gpbbtest.h
+    gpbbtest.h \
+    destructivedisktest.h \
+    programsenoko.h \
+    buttontest.h \
+    capacitytest.h \
+    packageinstaller.h
 
 FORMS    += novenatestwindow.ui
 
