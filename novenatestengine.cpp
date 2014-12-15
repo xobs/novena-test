@@ -13,7 +13,10 @@
 /* Available Tests */
 #include "acceltest.h"
 #include "audiotest.h"
+#include "buttontest.h"
+#include "capacitytest.h"
 #include "delayedtextprinttest.h"
+#include "destructivedisktest.h"
 #include "eepromtest.h"
 #include "fpgatest.h"
 #include "gpbbtest.h"
@@ -21,10 +24,14 @@
 #include "keyboardmousetest.h"
 #include "mmctest.h"
 #include "netperftest.h"
+#include "packageinstaller.h"
+#include "programsenoko.h"
 #include "stmpetest.h"
 #include "timertest.h"
 #include "usbtest.h"
 #include "waitfornetwork.h"
+
+#define NOVENA_DESKTOP
 
 class NovenaTest;
 class NovenaTestEngineThread : public QThread {
@@ -72,9 +79,8 @@ void NovenaTestEngine::getSerial(void)
 {
     QCryptographicHash *hash = new QCryptographicHash(QCryptographicHash::Sha1);
     int mem_fd = 0;
-    qint32 *mem_32 = NULL;
-    int mem_range = 0x021bc000;
-    qint32 keys[4];
+    quint32 *mem_32 = NULL;
+    int mem_range = 0x021b0000;
 
     _serialNumber = "no-serial";
 
@@ -84,18 +90,28 @@ void NovenaTestEngine::getSerial(void)
         goto out;
     }
 
-    mem_32 = (qint32 *)mmap(0, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, mem_range&~0xFFFF);
+    mem_32 = (quint32 *)mmap(0, 0xffff, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, mem_range&~0xFFFF);
     if (-1 == (int)mem_32) {
         updateTestState("system", TEST_INFO, 0, QString() + "Couldn't mmap /dev/mem: " + strerror(errno));
         goto out;
     }
 
-    keys[0] = mem_32[0x410 / 4];
-    keys[1] = mem_32[0x420 / 4];
-    keys[2] = mem_32[0x430 / 4];
-    keys[3] = mem_32[0x440 / 4];
-
-    hash->addData((const char *)keys, sizeof(keys));
+    hash->addData((const char *)&mem_32[0xc400], 4);
+    hash->addData((const char *)&mem_32[0xc410], 4);
+    hash->addData((const char *)&mem_32[0xc420], 4);
+    hash->addData((const char *)&mem_32[0xc430], 4);
+    hash->addData((const char *)&mem_32[0xc440], 4);
+    hash->addData((const char *)&mem_32[0xc450], 4);
+    hash->addData((const char *)&mem_32[0xc460], 4);
+    hash->addData((const char *)&mem_32[0xc470], 4);
+    hash->addData((const char *)&mem_32[0xc480], 4);
+    hash->addData((const char *)&mem_32[0xc490], 4);
+    hash->addData((const char *)&mem_32[0xc4a0], 4);
+    hash->addData((const char *)&mem_32[0xc4b0], 4);
+    hash->addData((const char *)&mem_32[0xc4c0], 4);
+    hash->addData((const char *)&mem_32[0xc4d0], 4);
+    hash->addData((const char *)&mem_32[0xc4e0], 4);
+    hash->addData((const char *)&mem_32[0xc4f0], 4);
 
     _serialNumber = hash->result().toHex();
     delete hash;
@@ -110,6 +126,9 @@ out:
 }
 
 bool NovenaTestEngine::loadAllTests() {
+    tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
+    tests.append(new TimerTestStart());
+#if defined(NOVENA_BAREBOARD)
     tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
     tests.append(new TimerTestStart());
     tests.append(new STMPETest());
@@ -127,9 +146,26 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new MMCTestFinish());
     tests.append(new HWClockTestFinish());
     tests.append(new EEPROMFinish("http://bunniefoo.com:8674/assign/by-serial/%1/"));
+#elif defined(NOVENA_DESKTOP)
+    tests.append(new CapacityTest(CapacityTest::InternalDevice, 12 * 1024 * 1024, -1));
+    tests.append(new EEPROMUpdate("es8328,pcie,gbit,hdmi,eepromoops,senoko,edp"));
+    tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.3:1.0-scsi-0:0:0:0", "Internal"));
+    tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.2:1.0-scsi-0:0:0:0", "External"));
+    tests.append(new ProgramSenoko("/factory/senoko.hex"));
+    tests.append(new ButtonTest(ButtonTest::PowerButton | ButtonTest::LidSwitch | ButtonTest::CustomButton));
+    tests.append(new PackageInstaller("/factory/",
+                                      QStringList()
+                                      << "xorg-novena_1.3-r2_all.deb"
+                                      << "linux-image-novena_3.17-novena-rc3_armhf.deb"
+                                      << "linux-headers-novena_3.17-novena-rc3_armhf.deb"
+                                      << "u-boot-novena_2014.10-novena-rc14_armhf.deb"));
+#else
+#error "No board type defined!  Must be: NOVENA_BAREBOARD or NOVENA_DESKTOP"
+#endif
     tests.append(new TimerTestStop());
-    tests.append(new AudioTest());
+    //tests.append(new AudioTest());
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
+
     /* Wire up all signals and slots */
     int i;
     for (i=0; i<tests.count(); i++)
