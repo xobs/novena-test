@@ -5,11 +5,12 @@
 class DestructiveDiskTest : public NovenaTest
 {
 public:
-    DestructiveDiskTest(const QString _path, const QString _type);
+    DestructiveDiskTest(quint32 _bytes, const QString _path, const QString _type);
     void runTest();
 
 private:
     QString path;
+    quint32 bytes;
 };
 
 #endif // DESETRUCTIVEDISKTEST_H
