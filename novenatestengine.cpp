@@ -163,7 +163,7 @@ bool NovenaTestEngine::loadAllTests() {
 #error "No board type defined!  Must be: NOVENA_BAREBOARD or NOVENA_DESKTOP"
 #endif
     tests.append(new TimerTestStop());
-    //tests.append(new AudioTest());
+    tests.append(new AudioTest());
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
 
     /* Wire up all signals and slots */
