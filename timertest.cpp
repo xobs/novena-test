@@ -26,6 +26,6 @@ TimerTestStop::TimerTestStop()
 
 void TimerTestStop::runTest()
 {
-    testDebug(QString("Image writing took %1 ms").arg(timer->elapsed()));
+    testDebug(QString("Test took %1 ms").arg(timer->elapsed()));
     testInfo("Timer finished");
 }
