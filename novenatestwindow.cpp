@@ -269,6 +269,9 @@ void NovenaTestWindow::setErrorString(QString &message)
 
 void NovenaTestWindow::finishTests(bool successful)
 {
+    QProcess dmesg;
+    QProcess ifconfig;
+
     ui->progressLabel->setVisible(false);
     ui->progressBar->setVisible(false);
 
@@ -281,6 +284,19 @@ void NovenaTestWindow::finishTests(bool successful)
         ui->errorFailLabel->setVisible(true);
         logFile.write("<p><font color=\"red\">FAIL</font>\n");
     }
+
+    /* Copy dmesg */
+    dmesg.start("dmesg");
+    dmesg.waitForFinished();
+    logFile.write("<p><strong>dmesg output:</strong><p><pre>");
+    logFile.write(dmesg.readAllStandardOutput());
+    logFile.write("</pre>");
+
+    ifconfig.start("ifconfig -a");
+    ifconfig.waitForFinished();
+    logFile.write("<p><strong>ifconfig -a:</strong><p><pre>");
+    logFile.write(ifconfig.readAllStandardOutput());
+    logFile.write("</pre>");
 
     if (engine->debugModeOn()) {
         ui->testSelectionButton->setVisible(true);
