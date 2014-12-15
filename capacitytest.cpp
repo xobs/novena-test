@@ -31,7 +31,7 @@ void CapacityTest::runTest()
     QString sizeStr = sizeFile.readAll().trimmed();
     qint64 size = sizeStr.toLongLong() * 512;
 
-    testInfo(QString("Capacity is %1 blocks (%2 bytes, %3 KB, %4 MB, %5 GB)")
+    testInfo(QString("Capacity is %1 blocks (%2 bytes or %3 KB or %4 MB or %5 GB)")
              .arg(sizeStr)
              .arg(QString::number(size))
              .arg(QString::number(size / 1024))
@@ -39,12 +39,12 @@ void CapacityTest::runTest()
              .arg(QString::number(size / 1024 / 1024 / 1024)));
 
     if ((min_size >= 0) && (size < min_size))
-        testError("Disk is too small");
+        testError(QString("Disk is too small (wanted a minimum of %1 megabytes)").arg(QString::number(min_size / 1024 / 1024)));
     else
         testDebug(QString("Minimum size is %1, which is bigger than %2").arg(QString::number(min_size)).arg(QString::number(size)));
 
     if ((max_size >= 0) && (size > max_size))
-        testError("Disk is too large");
+        testError(QString("Disk is too large (wanted a maximum of %1 megabytes)").arg(QString::number(max_size / 1024 / 1024)));
     else
         testDebug(QString("Maximum size is %1, which is smaller than %2").arg(QString::number(max_size)).arg(QString::number(size)));
 }
