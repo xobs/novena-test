@@ -2,6 +2,8 @@
 #define BUTTONTEST_H
 #include "novenatest.h"
 
+class QFile;
+
 class ButtonTest : public NovenaTest
 {
 public:
@@ -11,10 +13,13 @@ public:
         LidSwitch = (1 << 2),
     };
 
-    ButtonTest(enum button _buttonMask);
+    ButtonTest(int _buttonMask);
     void runTest();
 
 private:
+    QFile *openByName(const QString &name);
+    int getSenokoRegister(int reg);
+    int senoko_fd;
     int buttonMask;
 };
 
