@@ -9,6 +9,8 @@ public:
     void runTest();
 
 private:
+    int prepGPIO(void);
+    int resetGPIO(void);
     QString firmware;
 };
 
