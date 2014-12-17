@@ -35,7 +35,7 @@ QFile *ButtonTest::openByName(const QString &name)
 
         ioctl(inputFile->handle(), EVIOCGNAME(sizeof(devName)), devName);
         if (name == devName) {
-            testDebug(QString("Name %1 matches %2").arg((const char*)devName).arg(name));
+            testDebug(QString("Found %1").arg((const char*)devName));
             int flags = fcntl(inputFile->handle(), F_GETFL);
             flags |= O_NONBLOCK;
             fcntl(inputFile->handle(), F_SETFL, flags);
@@ -80,7 +80,7 @@ int ButtonTest::getSenokoRegister(int reg)
     if(ioctl(senoko_fd, I2C_RDWR, &session) < 0)
         return -1;
 
-    return data[0];
+    return ((int)data[0] & 0xff);
 }
 
 ButtonTest::ButtonTest(int _buttonMask)
@@ -95,6 +95,7 @@ void ButtonTest::runTest()
     QFile *powerButton = NULL;
     QFile *lidSwitch = NULL;
     QFile *customButton = NULL;
+    QStringList buttonNames;
     struct input_event evt;
 
     if (buttonMask & PowerButton) {
@@ -102,6 +103,7 @@ void ButtonTest::runTest()
         if (!powerButton) {
             testInfo("Couldn't find Senoko keypad, will pokk");
         }
+        buttonNames.append("Power button");
     }
 
     if (buttonMask & LidSwitch) {
@@ -110,6 +112,7 @@ void ButtonTest::runTest()
             testError("Couldn't find gpio-keys");
             return;
         }
+        buttonNames.append("Lid switch");
     }
 
     if (buttonMask & CustomButton) {
@@ -118,9 +121,14 @@ void ButtonTest::runTest()
             testError("Couldn't find 20b8000.kpp");
             return;
         }
+        buttonNames.append("User button");
     }
 
+    testInfo(QString("Please trigger these buttons: ").append(buttonNames.join(",")));
+
+    int loops = 0;
     while (buttonMask) {
+        loops++;
 
         if ((buttonMask & PowerButton) && powerButton) {
             memset((void *)&evt, 0, sizeof(evt));
@@ -137,9 +145,20 @@ void ButtonTest::runTest()
             }
         }
 
-        if ((buttonMask & PowerButton) && getSenokoRegister(0x0f) & (1 << 4)) {
-            testInfo("Got Power key (i2c direct)");
-            buttonMask &= ~PowerButton;
+        if ((buttonMask & PowerButton)) {
+            int ret = getSenokoRegister(0x0f);
+            if (ret >= 0 && (ret & (1 << 4))) {
+                testInfo("Got Power key (i2c direct)");
+                buttonMask &= ~PowerButton;
+            }
+        }
+
+        if (buttonMask & ACPlug) {
+            int ret = getSenokoRegister(0x0f);
+            if (ret >= 0 && !(ret & (1 << 3))) {
+                testInfo("Got AC unplug (i2c direct)");
+                buttonMask &= ~ACPlug;
+            }
         }
 
         if ((buttonMask & LidSwitch) && lidSwitch) {

@@ -11,6 +11,7 @@ public:
         PowerButton = (1 << 0),
         CustomButton = (1 << 1),
         LidSwitch = (1 << 2),
+        ACPlug = (1 << 3),
     };
 
     ButtonTest(int _buttonMask);
