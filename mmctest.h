@@ -36,6 +36,7 @@ public:
     void run();
     static QString getInternalBlockName();
     static QString getExternalBlockName();
+    static QString getSataBlockName();
 };
 
 

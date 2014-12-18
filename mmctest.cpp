@@ -5,10 +5,11 @@
 #include <QTime>
 #include <stdint.h>
 #ifdef linux
+#include <errno.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <errno.h>
+#include <unistd.h>
 #endif
 #include "mmctest.h"
 
@@ -49,6 +50,21 @@ QString MMCCopyThread::getInternalBlockName()
 QString MMCCopyThread::getExternalBlockName()
 {
     return "/dev/disk/by-path/platform-2194000.usdhc";
+}
+
+QString MMCCopyThread::getSataBlockName()
+{
+    QDir devs("/sys/devices/soc0/soc/2200000.sata/ata1/host0/target0:0:0/0:0:0:0/block/");
+    if (!devs.exists())
+        return "";
+
+    devs.setFilter(QDir::NoDot | QDir::NoDotDot | QDir::Dirs);
+    QStringList entries = devs.entryList();
+
+    if (entries.length() < 1)
+        return "";
+
+    return QString("/dev/").append(entries.at(0));
 }
 
 
@@ -106,13 +122,6 @@ int MMCCopyThread::resizeMBR()
     if (!fdisk.waitForFinished())
         errorOut("fdisk returned an error");
 
-    return 0;
-}
-
-int MMCCopyThread::resizeRoot()
-{
-
-
     infoMessage("Updating partition table");
     if (!outputImage.flush())
         errorOut("Unable to sync disk");
@@ -120,7 +129,11 @@ int MMCCopyThread::resizeRoot()
         errorOut(QString("Unable to re-read MBR: %1").arg(strerror(errno)));
     sleep(10);
 
+    return 0;
+}
 
+int MMCCopyThread::resizeRoot()
+{
     QProcess fsck;
     infoMessage("Running fsck.ext4");
 
@@ -142,6 +155,7 @@ int MMCCopyThread::resizeRoot()
     }
 
 
+    sync();
     sleep(10);
 
 
@@ -164,6 +178,7 @@ int MMCCopyThread::resizeRoot()
         copyError(resize2fs.readAllStandardError());
         errorOut(QString("resize2fs returned an error: " + QString::number(resize2fs.exitCode())));
     }
+    sync();
 
     return 0;
 }
