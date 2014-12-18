@@ -1,98 +1,28 @@
-#include <QThread>
 #include <QFile>
-#include <QDir>
 #include <QProcess>
-#include <QTime>
-#include <stdint.h>
-#ifdef linux
+
+#include "copymmctosatatest.h"
+
+#include <errno.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <errno.h>
-#endif
-#include "mmctest.h"
-
-static MMCCopyThread *copyThread;
-static QTime *timer;
+#include <unistd.h>
 
 #define MOUNT_POINT "/mnt/"
 
-#define errorOut(x) \
-    do { \
-        emit copyError(x); \
-        return 1; \
-    } while(0)
-
-
-MMCCopyThread::MMCCopyThread(QString src,  QString dst)
-    : outputImage(dst), inputImage(src)
-{
-    source = src;
-    destination = dst;
-}
-
-void MMCCopyThread::infoMessage(QString msg)
-{
-    emit copyInfo(msg);
-}
-
-void MMCCopyThread::debugMessage(QString msg)
-{
-    emit copyDebug(msg);
-}
-
-QString MMCCopyThread::getInternalBlockName()
-{
-    return "/dev/disk/by-path/platform-2198000.usdhc";
-}
-
-QString MMCCopyThread::getExternalBlockName()
-{
-    return "/dev/disk/by-path/platform-2194000.usdhc";
-}
-
-
-int MMCCopyThread::findDevices()
-{
-    infoMessage(QString("Opening input image %1").arg(inputImage.fileName()));
-    if (!inputImage.open(QIODevice::ReadOnly))
-        errorOut("Couldn't open input image file");
-
-    infoMessage(QString("Opening output image %1").arg(outputImage.fileName()));
-    if (!outputImage.open(QIODevice::WriteOnly| QIODevice::Truncate))
-        errorOut("Couldn't open output image file");
-
-    return 0;
-}
-
-int MMCCopyThread::extractImage()
-{
-    qint64 ret;
-    char data[1024 * 1024];
-
-    while ((ret = inputImage.read(data, sizeof(data))) > 0) {
-        ret = outputImage.write(data, ret);
-
-        if (ret <= 0)
-            errorOut("Unable to write data");
-    }
-
-    if (ret == -1)
-        errorOut("Unable to read data");
-
-    return 0;
-}
-
-int MMCCopyThread::resizeMBR()
+int CopyMMCToSataTest::resizeMBR(void)
 {
     QProcess fdisk;
 
-    infoMessage("Resizing disk");
+    testInfo("Resizing disk");
 
-    debugMessage("Starting fdisk");
-    fdisk.start("fdisk", QStringList() << outputImage.fileName());
-    if (!fdisk.waitForStarted())
-        errorOut("Unable to start fdisk");
+    testDebug("Starting fdisk");
+    fdisk.start("fdisk", QStringList() << dst.fileName());
+    if (!fdisk.waitForStarted()) {
+        testError("Unable to start fdisk");
+        return 1;
+    }
 
     fdisk.write("d\n"); /* Delete existing partition */
     fdisk.write("3\n"); /* Partition number 3 */
@@ -103,169 +33,181 @@ int MMCCopyThread::resizeMBR()
     fdisk.write(" \n"); /* Default ending offset */
     fdisk.write("w\n"); /* Write changes to disk */
 
-    if (!fdisk.waitForFinished())
-        errorOut("fdisk returned an error");
+    if (!fdisk.waitForFinished()) {
+        testError("fdisk returned an error");
+        return 1;
+    }
+
+    testInfo("Updating partition table");
+
+    if (!dst.flush()) {
+        testError("Unable to sync disk");
+        return 1;
+    }
+
+    if (ioctl(dst.handle(), BLKRRPART, NULL) == -1) {
+        testError(QString("Unable to re-read MBR: %1").arg(strerror(errno)));
+        return 1;
+    }
 
     return 0;
 }
 
-int MMCCopyThread::resizeRoot()
+int CopyMMCToSataTest::resizeRoot(void)
 {
 
-
-    infoMessage("Updating partition table");
-    if (!outputImage.flush())
-        errorOut("Unable to sync disk");
-    if (ioctl(outputImage.handle(), BLKRRPART, NULL) == -1)
-        errorOut(QString("Unable to re-read MBR: %1").arg(strerror(errno)));
     sleep(10);
 
 
     QProcess fsck;
-    infoMessage("Running fsck.ext4");
+    testInfo("Running fsck.ext4");
 
-    fsck.start("fsck.ext4", QStringList() << "-y" << QString("%1-part3").arg(outputImage.fileName()));
+    fsck.start("fsck.ext4", QStringList() << "-y" << QString("%1%2").arg(dst.fileName()).arg("3"));
 
-    if (!fsck.waitForStarted())
-        errorOut("Unable to start fsck");
+    if (!fsck.waitForStarted()) {
+        testError("Unable to start fsck");
+        return 1;
+    }
 
     fsck.closeWriteChannel();
 
     if (!fsck.waitForFinished(INT_MAX)) {
-        copyError(fsck.readAllStandardError());
-        errorOut("fsck returned an error");
+        testError("fsck returned an error");
+        testError(fsck.readAllStandardError());
+        return 1;
     }
 
     if (fsck.exitCode()) {
-        copyError(fsck.readAllStandardError());
-        errorOut(QString("fsck returned an error: " + QString::number(fsck.exitCode())));
+        testError(QString("fsck returned an error: " + QString::number(fsck.exitCode())));
+        return 1;
     }
 
-
+    sync();
     sleep(10);
 
 
     QProcess resize2fs;
-    infoMessage("Checking disk");
+    testInfo("Checking disk");
 
-    resize2fs.start("resize2fs", QStringList() << "-f" << QString("%1-part3").arg(outputImage.fileName()));
+    resize2fs.start("resize2fs", QStringList() << "-f" << QString("%1%2").arg(dst.fileName()).arg("3"));
 
-    if (!resize2fs.waitForStarted())
-        errorOut("Unable to start resize2fs");
+    if (!resize2fs.waitForStarted()) {
+        testError("Unable to start resize2fs");
+        return 1;
+    }
 
     resize2fs.closeWriteChannel();
 
     if (!resize2fs.waitForFinished(INT_MAX)) {
-        copyError(resize2fs.readAllStandardError());
-        errorOut("resize2fs returned an error");
+        testError("resize2fs returned an error");
+        testError(resize2fs.readAllStandardError());
+        return 1;
     }
 
     if (resize2fs.exitCode()) {
-        copyError(resize2fs.readAllStandardError());
-        errorOut(QString("resize2fs returned an error: " + QString::number(resize2fs.exitCode())));
+        testError(QString("resize2fs returned an error: " + QString::number(resize2fs.exitCode())));
+        testError(resize2fs.readAllStandardError());
+        return 1;
     }
+
+    sync();
 
     return 0;
 }
 
-int MMCCopyThread::mountDisk()
+int CopyMMCToSataTest::mountDisk(void)
  {
-    QString ext4fs = QString("%1-part3").arg(outputImage.fileName());
-    QString vfatfs = QString("%1-part1").arg(outputImage.fileName());
+    QString ext4fs = QString("%1%2").arg(dst.fileName()).arg("3");
+    QString vfatfs = QString("%1%2").arg(dst.fileName()).arg("1");
     QString bootPath = QString("%1/boot").arg(MOUNT_POINT);
 
-    infoMessage("Mounting devices");
+    testInfo("Mounting devices");
 
-    debugMessage("Mounting root filesystem");
-    if (mount(ext4fs.toLocal8Bit(), MOUNT_POINT, "ext4", MS_NOATIME | MS_NODIRATIME, "data=writeback,barrier=0,errors=remount-ro") == -1)
-        errorOut("Unable to mount image");
+    testDebug("Mounting root filesystem");
+    if (mount(ext4fs.toLocal8Bit(), MOUNT_POINT, "ext4", MS_NOATIME | MS_NODIRATIME, "data=writeback,barrier=0,errors=remount-ro") == -1) {
+        testError("Unable to mount image");
+        return 1;
+    }
 
-    debugMessage("Mounting boot filesystem");
+    testDebug("Mounting boot filesystem");
     if (mount(vfatfs.toLocal8Bit(), bootPath.toLocal8Bit(), "vfat", MS_NOATIME | MS_NODIRATIME, "") == -1) {
-        errorOut("Unable to mount image boot directory");
+        testError("Unable to mount image boot directory");
         umount(MOUNT_POINT);
+        return 1;
     }
 
     return 0;
 }
 
-int MMCCopyThread::unmountDisk()
+int CopyMMCToSataTest::unmountDisk(void)
 {
     QString bootPath = QString("%1/boot").arg(MOUNT_POINT);
 
-    infoMessage("Unmounting disk");
+    testInfo("Unmounting disk");
 
-    debugMessage("Unmounting boot partition");
-    if (umount(bootPath.toLocal8Bit()) == -1)
-        errorOut(QString("Unable to umount /boot: %1").arg(strerror(errno)));
+    testDebug("Unmounting boot partition");
+    if (umount(bootPath.toLocal8Bit()) == -1) {
+        testError(QString("Unable to umount /boot: %1").arg(strerror(errno)));
+        return 1;
+    }
 
-    debugMessage("Unmounting root partition");
-    if (umount(MOUNT_POINT) == -1)
-        errorOut(QString("Unable to umount /: %1").arg(strerror(errno)));
-
-    outputImage.close();
-    inputImage.close();
+    testDebug("Unmounting root partition");
+    if (umount(MOUNT_POINT) == -1) {
+        testError(QString("Unable to umount /: %1").arg(strerror(errno)));
+        return 1;
+    }
 
     return 0;
 }
 
-void MMCCopyThread::run()
+CopyMMCToSataTest::CopyMMCToSataTest(QString _src, QString _dst)
+    : src(_src), dst(_dst)
 {
-    if (findDevices())
-        return;
-    if (extractImage())
-        return;
-    if (resizeMBR())
-        return;
-    if (resizeRoot())
-        return;
-    if (mountDisk())
-        return;
-    if (unmountDisk())
-        return;
+    name = "Copy MMC to Sata";
 }
 
-
-MMCTestStart::MMCTestStart(QString src, QString dst)
+void CopyMMCToSataTest::runTest()
 {
-    name = "MMC imaging";
-    copyThread = new MMCCopyThread(src, dst);
-
-    connect(copyThread, SIGNAL(copyError(QString)),
-            this, SLOT(testError(QString)));
-    connect(copyThread, SIGNAL(copyInfo(QString)),
-            this, SLOT(testInfo(QString)));
-    connect(copyThread, SIGNAL(copyDebug(QString)),
-            this, SLOT(testDebug(QString)));
-
-    timer = new QTime();
-}
-
-void MMCTestStart::runTest()
-{
-    testInfo(QString("Checking MMC status..."));
-    if (copyThread->isRunning()) {
-        testError("Critical error: MMC test is already running");
-        return;
+    src.open(QIODevice::ReadOnly);
+    if (!src.isOpen()) {
+        testError(QString("Unable to open MMC for reading: %1").arg(src.errorString()));
+        goto done;
     }
 
-    testInfo("Starting MMC copy");
-    timer->start();
-    copyThread->start();
-    testInfo("MMC copy continuing in background");
-}
+    dst.open(QIODevice::WriteOnly);
+    if (!dst.isOpen()) {
+        testError(QString("Unable to open Sata for writing: %1").arg(dst.errorString()));
+        goto done;
+    }
 
+    testInfo("Beginning copy...");
 
+    while (1) {
+        QByteArray data = src.read(1024 * 1024);
+        if (src.error() != QFileDevice::NoError) {
+            testError(QString("Unable to read data from MMC: %1").arg(src.errorString()));
+            goto done;
+        }
 
-MMCTestFinish::MMCTestFinish()
-{
-    name = "Finalizing MMC";
-}
+        if (data.size() == 0)
+            break;
 
-void MMCTestFinish::runTest()
-{
-    testInfo("Waiting for MMC to finish...");
-    copyThread->wait();
-    testDebug(QString("Image writing took %1 ms").arg(timer->elapsed()));
-    testInfo("Done");
+        if (dst.write(data) != data.size()) {
+            testError(QString("Unable to write data to Sata: %1").arg(dst.errorString()));
+            goto done;
+        }
+    }
+
+    if (resizeMBR())
+        goto done;
+    if (resizeRoot())
+        goto done;
+    if (mountDisk())
+        goto done;
+    if (unmountDisk())
+        goto done;
+
+done:
+    dst.close();
+    src.close();
 }
