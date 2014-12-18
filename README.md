@@ -50,21 +50,51 @@ The following tests have been defined.  Note that tests in italics have not yet 
 * String printer (Useful for printing status messages)
 
 
-USB test image
---------------
+USB test image for bare board
+-----------------------------
 
 While the base system software runs off the external MMC card, the actual
 factory test program, along with the image to be burned, all reside on
 a separate USB drive.  This drive MUST contain a valid partition table, and
-MUST have the first partition be VFAT-formatted.  The file MUST contain
+MUST have the first partition be VFAT-formatted.  The disk MUST contain
 the following files:
 
-* novena-test: The program built here
+* novena-test: The program built here, with NOVENA_BAREBOARD defined in novenatestengine.cpp
 * gpbb_fpga.bit: Available in the files/ directory
 * novena_fpga-1.22.bit: Available in the files/ directory
 * runtest.sh: Available in the files/ directory
 * sounds/: A directory containing .wav files.  Suggested to be pentatonic.
+* networkmanager-config: A NetworkManager keyfile configuration for the wifi access point used in the factory
 
+
+USB test image for desktop configuration
+----------------------------------------
+
+* novena-test: The program built here, with NOVENA_DESKTOP defined in novenatestengine.cpp
+* runtest.sh: Available in the files/ directory
+* sounds/: A directory containing .wav files.  Suggested to be pentatonic.
+* senoko.hex: Senoko configuration file, output from ChibiOS-3 build
+* stm32flash: Executable binary output from stm32flash repo
+* debian packages: The .deb files referenced in the PackageInstaller() test in novenatestengine.cpp
+
+Optionally, you can add this file:
+
+* networkmanager-config: A NetworkManager keyfile configuration for the wifi access point used in the factory
+
+
+USB test image for laptop configuration
+----------------------------------------
+
+* novena-test: The program built here, with NOVENA_LAPTOP defined in novenatestengine.cpp
+* runtest.sh: Available in the files/ directory
+* sounds/: A directory containing .wav files.  Suggested to be pentatonic.
+* senoko.hex: Senoko configuration file, output from ChibiOS-3 build
+* stm32flash: Executable binary output from stm32flash repo
+* debian packages: The .deb files referenced in the PackageInstaller() test in novenatestengine.cpp
+
+Optionally, you can add this file:
+
+* networkmanager-config: A NetworkManager keyfile configuration for the wifi access point used in the factory
 
 Constructing a Factory Test image
 ---------------------------------
