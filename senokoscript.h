@@ -2,6 +2,9 @@
 #define SENOKOSCRIPT_H
 #include "novenatest.h"
 
+#include <QFile>
+#include <QStringList>
+
 class SenokoScript : public NovenaTest
 {
 public:
@@ -9,8 +12,10 @@ public:
     void runTest();
 
 private:
-    int resetGPIO(void);
     QStringList commands;
+    QFile serial;
+
+    const QString runCommand(const QString command);
 };
 
 #endif // SENOKOSCRIPT_H

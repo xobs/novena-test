@@ -1,122 +1,115 @@
 #include "senokoscript.h"
 
 #define SERIAL_DEVICE "/dev/ttymxc3"
+#define PROMPT "ch> "
 #include <QFile>
 
 #include <termios.h>
 
-SenokoScript::SenokoScript(const QStringList _commands) : commands(_commands)
+SenokoScript::SenokoScript(const QStringList _commands) :
+    commands(_commands), serial(SERIAL_DEVICE)
 {
     name = "Senoko Script";
 }
 
-int SenokoScript::resetGPIO(void)
+const QString SenokoScript::runCommand(const QString command)
 {
-    QFile valueFile("/sys/class/gpio/gpio149/value");
+    quint8 buf[strlen(PROMPT)];
+    int tst;
+    int offset = 0;
+    int i;
+    const char *banner = PROMPT;
+    QString output;
 
-    if (!valueFile.open(QIODevice::WriteOnly)) {
-        testError(QString() + "Unable to open GPIO149 value file: " + valueFile.errorString());
-        return 1;
+    serial.write(command.toUtf8());
+    serial.write("\r\n");
+    serial.flush();
+
+    while (1) {
+        int ret = serial.read((char *)&buf[offset], 1);
+        if (ret == 1) {
+            tst = (offset + 1) % sizeof(buf);
+            output.append(buf[offset]);
+
+            i = 0;
+            while (tst != offset) {
+                if (banner[i] != buf[tst])
+                        break;
+                tst++;
+                i++;
+                tst %= sizeof(buf);
+            }
+            if ((tst == offset) && (banner[i] == buf[tst])) {
+                testDebug(QString("String from Senoko: ").append(output));
+                return output;
+            }
+
+            offset++;
+            offset %= sizeof(buf);
+        }
+        else if (ret == -1) {
+            testError(QString("Unable to read from serial port: %1").arg(serial.errorString()));
+            return "";
+        }
+        else if (ret == 0) {
+            testInfo("read() returned 0");
+            if (!serial.isOpen()) {
+                testError("Serial is closed now?!");
+                testError(serial.errorString());
+                testError(output);
+                return "";
+            }
+        }
     }
-    valueFile.write("0\n");
-    valueFile.close();
 
-    sleep(1);
-
-    if (!valueFile.open(QIODevice::WriteOnly)) {
-        testError(QString() + "Unable to open GPIO149 value file: " + valueFile.errorString());
-        return 1;
-    }
-    valueFile.write("1\n");
-    valueFile.close();
-
-    return 0;
+    return "";
 }
 
 void SenokoScript::runTest()
 {
-    QFile serial(SERIAL_DEVICE);
+    int ret;
+    struct termios t;
 
-    serial.open(QIODevice::ReadWrite);
-
-    testInfo("Please hold the \"Reflash\" button on Senoko");
-    
-    /* Wait for the flashing process to start */
-    while (1) {
-        bool foundBanner = false;
-
-        /* This string is the last thing to appear before programming starts */
-        const char *searchString = "Serial Config: 115200 8E1";
-
-        testDebug("Trying to initiate upload...");
-        resetGPIO();
-
-        stm32flash.terminate();
-
-        stm32flash.setProcessChannelMode(QProcess::MergedChannels);
-        stm32flash.start("/factory/stm32flash", QStringList()
-                           << "-b" << "115200"
-                           << "-w" << firmware
-                           << "/dev/ttymxc3");
-        stm32flash.waitForStarted();
-
-        tries = 0;
-        while (!foundBanner && (tries++ < 10)) {
-            if (!stm32flash.waitForReadyRead(1000)) {
-                testDebug("Process wasn't ready for read in 1 second");
-                break;
-            }
-
-            QByteArray output = stm32flash.readLine();
-            testDebug(QString("Output string: ") + output);
-
-            if (stm32flash.state() != QProcess::Running) {
-                testDebug("Process no longer running");
-                break;
-            }
-
-            if (output.startsWith(searchString)) {
-                testDebug("Found search string");
-                foundBanner = true;
-            }
-            else {
-                testDebug(QString("Line doesn't contain string %1: %2").arg(searchString).arg((const char *)output));
-            }
-        }
-
-        if (!foundBanner) {
-            testDebug("Didn't find banner");
-            continue;
-        }
-
-        if (!stm32flash.waitForReadyRead(1000)) {
-            testDebug("Didn't find data after 1 second");
-            continue;
-        }
-
-        break;
+    if (commands.count() & 1) {
+        testError("Programmer Error: Tests must be comprised of [command] [result].  Missing at least one [result].");
     }
 
-    testInfo("Upload started, release the \"Reflash\" button");
-
-    if (!stm32flash.waitForFinished(60000)) {
-        testError("Flashing process took too long");
-        testError(stm32flash.readAllStandardOutput());
+    testDebug("Opening serial port");
+    serial.open(QIODevice::ReadWrite | QIODevice::Unbuffered);
+    if (!serial.isOpen()) {
+        testError(QString("Unable to open serial device: ").append(serial.errorString()));
         return;
     }
 
-    testInfo("Senoko reflashed successfully");
-    resetGPIO();
-
-    testInfo("Attempting to rescan device bus");
-    QFile autoprobeFile("/sys/bus/platform/drivers_autoprobe");
-
-    if (!autoprobeFile.open(QIODevice::WriteOnly)) {
-        testError(QString() + "Unable to open platform/drivers_autoprobe file: " + autoprobeFile.errorString());
+    testDebug("Setting serial port speed");
+    ret = tcgetattr(serial.handle(), &t);
+    if (-1 == ret) {
+        testError("Failed to get serial port attributes");
         return;
     }
-    autoprobeFile.write("1\n");
-    autoprobeFile.close();
+    cfsetispeed(&t, B115200);
+    cfsetospeed(&t, B115200);
+    cfmakeraw(&t);
+    ret = tcsetattr(serial.handle(), TCSANOW, &t);
+    if (-1 == ret) {
+        testError("Failed to set serial port speed");
+        return;
+    }
+    tcdrain(serial.handle());
 
-    sleep(1);
+    testDebug("Looking for Senoko...");
+    testInfo(QString("Found Senoko: ").append(runCommand("reboot")));
+
+    for (int i = 0; i < commands.count(); i += 2) {
+        const QString cmd = commands.at(i);
+        const QString needle = commands.at(i + 1);
+
+        testInfo(QString("Running command: ").append(cmd));
+
+        const QString haystack = runCommand(cmd);
+        if (!haystack.contains(needle)) {
+            testError(QString("Error: String %1 not found in output '%2'").arg(needle).arg(haystack));
+            return;
+        }
+    }
 }
