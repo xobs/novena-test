@@ -101,9 +101,13 @@ void ButtonTest::runTest()
     if (buttonMask & PowerButton) {
         powerButton = openByName("Senoko keypad");
         if (!powerButton) {
-            testInfo("Couldn't find Senoko keypad, will pokk");
+            testInfo("Couldn't find Senoko keypad, will poll");
         }
         buttonNames.append("Power button");
+    }
+
+    if (buttonMask & ACPlug) {
+        buttonNames.append("AC plug");
     }
 
     if (buttonMask & LidSwitch) {
