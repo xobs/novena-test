@@ -35,7 +35,11 @@ SOURCES += main.cpp\
     programsenoko.cpp \
     buttontest.cpp \
     capacitytest.cpp \
-    packageinstaller.cpp
+    packageinstaller.cpp \
+    senokoscript.cpp \
+    copymmctosatatest.cpp \
+    batterychargetest.cpp \
+    actest.cpp
 
 
 linux-gnueabi-oe-g++ {
@@ -68,7 +72,11 @@ HEADERS  += novenatestwindow.h \
     programsenoko.h \
     buttontest.h \
     capacitytest.h \
-    packageinstaller.h
+    packageinstaller.h \
+    senokoscript.h \
+    copymmctosatatest.h \
+    batterychargetest.h \
+    actest.h
 
 FORMS    += novenatestwindow.ui
 
