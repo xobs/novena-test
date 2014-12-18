@@ -1,7 +1,5 @@
-#include "buttontest.h"
-#include <QDir>
+#include "batterychargetest.h"
 #include <QFile>
-#include <QFileInfo>
 
 #include <errno.h>
 #include <linux/input.h>
@@ -20,10 +18,50 @@
 #define GG_I2C_FILE "/dev/i2c-0"
 #define GG_I2C_ADDR 0x0b
 
+#define MAX_TRIES 10
+
+#define CELL_TOLERANCE_MV 50
+#define TEMPERATURE_MIN_C 18
+#define TEMPERATURE_MAX_C 35
+#define TEMP_KELVIN_TO_CELSIUS 2731
+
+/* When charging, the current should be at least this much */
+#define CHARGE_CURRENT_MIN_MA 800
+
+/* This is the voltage at which the battery is "conditioned" */
+#define BATTERY_FINISHED_MV 11600
+
+/* If the battery gets here, it's gone too far and is no longer considered "good" */
+#define BATTERY_ABORT_MV 10500
+
 static int senoko_fd;
 static int gg_fd;
 
-static int getSenokoRegister(int reg)
+static int senokoShutdown(void)
+{
+    struct i2c_rdwr_ioctl_data session;
+    struct i2c_msg messages[1];
+
+    char power_off_sequence[] = { 0x0f, (2 << 6) | (1 << 0) };
+
+    if (senoko_fd <= 0)
+        senoko_fd = open(SENOKO_I2C_FILE, O_RDWR);
+
+    messages[0].addr = SENOKO_I2C_ADDR;
+    messages[0].flags = 0;
+    messages[0].len = sizeof(power_off_sequence);
+    messages[0].buf = power_off_sequence;
+
+    session.msgs = messages;
+    session.nmsgs = 1;
+
+    while(ioctl(senoko_fd, I2C_RDWR, &session) < 0)
+        ;
+
+    return 0;
+}
+
+static int getSenokoRegisterReal(int reg)
 {
     struct i2c_rdwr_ioctl_data session;
     struct i2c_msg messages[2];
@@ -57,7 +95,7 @@ static int getSenokoRegister(int reg)
     return ((int)data[0] & 0xff);
 }
 
-static int getGasGaugeData(int reg, void *data, quint32 len)
+static int getGasGaugeDataReal(int reg, void *data, quint32 len)
 {
     struct i2c_rdwr_ioctl_data session;
     struct i2c_msg messages[2];
@@ -71,12 +109,12 @@ static int getGasGaugeData(int reg, void *data, quint32 len)
 
     set_addr_buf[0] = reg;
 
-    messages[0].addr = SENOKO_I2C_ADDR;
+    messages[0].addr = GG_I2C_ADDR;
     messages[0].flags = 0;
     messages[0].len = sizeof(set_addr_buf);
     messages[0].buf = set_addr_buf;
 
-    messages[1].addr = SENOKO_I2C_ADDR;
+    messages[1].addr = GG_I2C_ADDR;
     messages[1].flags = I2C_M_RD;
     messages[1].len = len;
     messages[1].buf = (char *)data;
@@ -84,111 +122,236 @@ static int getGasGaugeData(int reg, void *data, quint32 len)
     session.msgs = messages;
     session.nmsgs = 2;
 
-    if(ioctl(senoko_fd, I2C_RDWR, &session) < 0)
+    if(ioctl(gg_fd, I2C_RDWR, &session) < 0)
         return -1;
 
     return 0;
 }
 
+static int getSenokoRegister(int reg)
+{
+    int tries;
+    bool success;
+    int ret = 0;
+
+    success = false;
+    for (tries = 0; !success && (tries < MAX_TRIES); tries++) {
+        ret = getSenokoRegisterReal(reg);
+
+        if (ret < 0)
+            sleep(1);
+        else
+            success = true;
+    }
+    if (!success)
+        return -1;
+    return ret;
+}
+
+static int getGasGaugeData(int reg, void *data, quint32 len)
+{
+    int tries;
+    bool success;
+
+    success = false;
+    for (tries = 0; !success && (tries < MAX_TRIES); tries++) {
+        if (getGasGaugeDataReal(reg, data, len))
+            sleep(1);
+        else
+            success = true;
+    }
+    if (!success)
+        return -1;
+    return 0;
+}
+
+BatteryChargeMonitor::BatteryChargeMonitor(void)
+{
+    stop_run = false;
+}
+
+void BatteryChargeMonitor::run(void)
+{
+    while (!stop_run) {
+        quint16 voltage;
+
+        if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage)))
+            senokoShutdown();
+
+        if (voltage < BATTERY_ABORT_MV)
+            senokoShutdown();
+
+        msleep(2500);
+    }
+}
 
 BatteryChargeTestStart::BatteryChargeTestStart(void)
 {
     name = "Battery Charge Test (Start)";
     senoko_fd = 0;
+    chargeMonitor = new BatteryChargeMonitor();
 }
 
 void BatteryChargeTestStart::runTest()
 {
+    quint16 voltage;
 
-
-    if (buttonMask & PowerButton) {
-        powerButton = openByName("Senoko keypad");
-        if (!powerButton) {
-            testInfo("Couldn't find Senoko keypad, will pokk");
-        }
-        buttonNames.append("Power button");
+    testInfo("Verifying the voltage is high enough to start");
+    if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
+        testError("Unable to communicate with gas gauge");
+        return;
     }
 
-    if (buttonMask & LidSwitch) {
-        lidSwitch = openByName("gpio-keys");
-        if (!lidSwitch) {
-            testError("Couldn't find gpio-keys");
+    if (voltage < 9500) {
+        testError(QString("Battery is defective.  Starting voltage is %1, should be at least 9500."));
+        return;
+    }
+
+    if (voltage < 10900) {
+        testInfo("Waiting for battery voltage to be at least 10.9V");
+        /* Wait for the votlage to be at least 10.9V */
+        do {
+            sleep(1);
+            if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
+                testError("Unable to communicate with gas gauge");
+                return;
+            }
+        } while (voltage < 10900);
+        testInfo("Battery is charged");
+    }
+
+    /* Ensure the cells are within 50 mV of each other */
+    quint16 cell1;
+    quint16 cell2;
+    quint16 cell3;
+    if (getGasGaugeData(0x3d, (void *)&cell1, sizeof(cell1))) {
+        testError("Unable to get cell 1 voltage");
+        return;
+    }
+
+    if (getGasGaugeData(0x3e, (void *)&cell2, sizeof(cell2))) {
+        testError("Unable to get cell 2 voltage");
+        return;
+    }
+
+    if (getGasGaugeData(0x3f, (void *)&cell3, sizeof(cell3))) {
+        testError("Unable to get cell 3 voltage");
+        return;
+    }
+
+    testDebug(QString("Cell voltages: %1  %2  %3").arg(QString::number(cell1)).arg(QString::number(cell2)).arg(QString::number(cell3)));
+
+    int diff12 = abs((int)cell1 - (int)cell2);
+    int diff13 = abs((int)cell1 - (int)cell3);
+    int diff23 = abs((int)cell2 - (int)cell3);
+
+    if (diff12 > CELL_TOLERANCE_MV) {
+        testError(QString("Cell 1 and cell 2 differ by %1 mV (max: %2 mV)").arg(QString::number(diff12).arg(QString::number(CELL_TOLERANCE_MV))));
+        return;
+    }
+
+    if (diff13 > CELL_TOLERANCE_MV) {
+        testError(QString("Cell 1 and cell 3 differ by %1 mV (max: %2 mV)").arg(QString::number(diff13).arg(QString::number(CELL_TOLERANCE_MV))));
+        return;
+    }
+
+    if (diff23 > CELL_TOLERANCE_MV) {
+        testError(QString("Cell 2 and cell 3 differ by %1 mV (max: %2 mV)").arg(QString::number(diff23).arg(QString::number(CELL_TOLERANCE_MV))));
+        return;
+    }
+
+    quint16 temp;
+    if (getGasGaugeData(0x08, (void *)&temp, sizeof(temp))) {
+        testError("Unable to get gas gauge temperature");
+        return;
+    }
+
+    int temp_c = (((double)temp) - TEMP_KELVIN_TO_CELSIUS) / 10.0;
+    if (temp_c < TEMPERATURE_MIN_C) {
+        testError(QString("Temperature is too low (wanted %1 C, got %2 C").arg(QString::number(TEMPERATURE_MIN_C)).arg(QString::number(temp_c)));
+        return;
+    }
+    else if (temp_c > TEMPERATURE_MAX_C) {
+        testError(QString("Temperature is too high (wanted %1 C, got %2 C").arg(QString::number(TEMPERATURE_MAX_C)).arg(QString::number(temp_c)));
+        return;
+    }
+    else
+        testInfo(QString("Temperature is OK: %1 C").arg(QString::number(temp_c)));
+
+    chargeMonitor->start();
+}
+
+BatteryChargeTestCondition::BatteryChargeTestCondition(void)
+{
+    name = "Battery Charge Test (Conditioning)";
+    senoko_fd = 0;
+}
+
+void BatteryChargeTestCondition::runTest()
+{
+    quint16 voltage;
+
+    testInfo(QString("Waiting for battery voltage to drop below %1 mV").arg(QString::number(BATTERY_FINISHED_MV)));
+    /* Wait for the votlage to drop below conditioning value */
+    do {
+        sleep(1);
+        if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
+            testError("Unable to communicate with gas gauge");
             return;
         }
-        buttonNames.append("Lid switch");
+    } while (voltage > BATTERY_FINISHED_MV);
+
+    if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
+        testError("Unable to communicate with gas gauge");
+        return;
+    }
+    if (voltage < BATTERY_ABORT_MV) {
+        testError(QString("Battery voltage is too low.  Wanted: %1 mV, got %2 mV").arg(QString::number(BATTERY_ABORT_MV)).arg(QString::number(voltage)));
+        senokoShutdown();
+        return;
     }
 
-    if (buttonMask & CustomButton) {
-        customButton = openByName("20b8000.kpp");
-        if (!customButton) {
-            testError("Couldn't find 20b8000.kpp");
-            return;
-        }
-        buttonNames.append("User button");
+    /* We're conditioned now, so turn down the backlight to save power */
+    QFile backlight("/sys/class/backlight/backlight/brightness");
+    backlight.open(QIODevice::WriteOnly);
+    if (!backlight.isOpen()) {
+        testError("Couldn't open backlight file");
+        return;
     }
 
-    testInfo(QString("Please trigger these buttons: ").append(buttonNames.join(",")));
+    backlight.write("4");
+    backlight.close();
 
-    int loops = 0;
-    while (buttonMask) {
-        loops++;
+    testInfo("Battery conditioned");
+}
 
-        if ((buttonMask & PowerButton) && powerButton) {
-            memset((void *)&evt, 0, sizeof(evt));
-            int ret = read(powerButton->handle(), (char *)&evt, sizeof(evt));
-            if (ret == sizeof(evt)) {
-                if ((evt.type == EV_KEY) && (evt.code == KEY_POWER)) {
-                    testInfo("Got Power key (evdev)");
-                    buttonMask &= ~PowerButton;
-                }
-                else if ((evt.type == EV_MSC) && (evt.code == MSC_SCAN))
-                    testDebug("Got keypad scan (custom key should be coming up soon)");
-                else
-                    testInfo(QString("Got unknown key from Senoko: Type: %1  Code: %2").arg(QString::number(evt.type, 16)).arg(QString::number(evt.code, 16)));
-            }
-        }
+BatteryChargeTestFinish::BatteryChargeTestFinish(void)
+{
+    name = "Battery Charge Test (Finish)";
+    senoko_fd = 0;
+}
 
-        if ((buttonMask & PowerButton)) {
-            int ret = getSenokoRegister(0x0f);
-            if (ret >= 0 && (ret & (1 << 4))) {
-                testInfo("Got Power key (i2c direct)");
-                buttonMask &= ~PowerButton;
-            }
-        }
+void BatteryChargeTestFinish::runTest()
+{
+    QFile backlight("/sys/class/backlight/backlight/brightness");
+    backlight.open(QIODevice::WriteOnly);
+    backlight.write("12");
+    backlight.close();
 
-        if (buttonMask & ACPlug) {
-            int ret = getSenokoRegister(0x0f);
-            if (ret >= 0 && !(ret & (1 << 3))) {
-                testInfo("Got AC unplug (i2c direct)");
-                buttonMask &= ~ACPlug;
-            }
-        }
+    /* Verify there is current flowing (the charger should be enabled already) */
+    sleep(10);
 
-        if ((buttonMask & LidSwitch) && lidSwitch) {
-            memset((void *)&evt, 0, sizeof(evt));
-            int ret = read(lidSwitch->handle(), (char *)&evt, sizeof(evt));
-            if (ret == sizeof(evt)) {
-                if ((evt.type == EV_SW) && (evt.code == SW_LID)) {
-                    testInfo("Got Lid switch");
-                    buttonMask &= ~LidSwitch;
-                }
-                else
-                    testInfo(QString("Got unknown key from GPIO: Type: %1  Code: %2").arg(QString::number(evt.type, 16)).arg(QString::number(evt.code, 16)));
-            }
-        }
-
-        if ((buttonMask & CustomButton) && customButton) {
-            memset((void *)&evt, 0, sizeof(evt));
-            int ret = read(customButton->handle(), (char *)&evt, sizeof(evt));
-            if (ret == sizeof(evt)) {
-                if ((evt.type == EV_KEY) && (evt.code == KEY_CONFIG)) {
-                    testInfo("Got Custom key");
-                    buttonMask &= ~CustomButton;
-                }
-                else
-                    testInfo(QString("Got unknown key from KPP: Type: %1  Code: %2").arg(QString::number(evt.type, 16)).arg(QString::number(evt.code, 16)));
-            }
-        }
+    qint16 current;
+    if (getGasGaugeData(0x0a, (void *)&current, sizeof(current))) {
+        testError("Unable to get current level");
+        return;
     }
-    testInfo("Got all buttons");
+
+    if (current < CHARGE_CURRENT_MIN_MA) {
+        testError(QString("Current should be %1 mA, but observed %2 mA").arg(QString::number(CHARGE_CURRENT_MIN_MA)).arg(QString::number(current)));
+        return;
+    }
+    testInfo(QString("Charger was observed to be driving %1 mA (threshold: %2 mA)").arg(QString::number(current)).arg(QString::number(CHARGE_CURRENT_MIN_MA)));
+
+    testInfo("Battery test passed");
 }

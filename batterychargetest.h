@@ -2,12 +2,33 @@
 #define BATTERYCHARGETEST_H
 #include "novenatest.h"
 
-class QFile;
+#include <QThread>
+
+class BatteryChargeMonitor : public QThread {
+    Q_OBJECT
+
+public:
+    BatteryChargeMonitor(void);
+    void run(void);
+
+private:
+    bool stop_run;
+};
 
 class BatteryChargeTestStart : public NovenaTest
 {
 public:
     BatteryChargeTestStart(void);
+    void runTest();
+
+private:
+    BatteryChargeMonitor *chargeMonitor;
+};
+
+class BatteryChargeTestCondition : public NovenaTest
+{
+public:
+    BatteryChargeTestCondition(void);
     void runTest();
 };
 
