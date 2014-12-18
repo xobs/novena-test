@@ -1,5 +1,7 @@
 #include "destructivedisktest.h"
 
+#include <fcntl.h>
+
 #include <QFile>
 #include <QCryptographicHash>
 
@@ -18,7 +20,15 @@ void DestructiveDiskTest::runTest()
     QCryptographicHash readHash(QCryptographicHash::Sha1);
     QCryptographicHash writeHash(QCryptographicHash::Sha1);
 
-    if (!writeFile.open(QIODevice::WriteOnly)) {
+
+    testDebug("Writing data to disk");
+    int writeFd = open(path.toUtf8(), O_WRONLY);
+    if (writeFd == -1) {
+        testError(QString("Error opening write fd"));
+        return;
+    }
+
+    if (!writeFile.open(writeFd, QIODevice::WriteOnly, QFileDevice::AutoCloseHandle)) {
         testError(QString("Unable to open disk for writing: %1").arg(writeFile.errorString()));
         return;
     }
@@ -29,10 +39,32 @@ void DestructiveDiskTest::runTest()
         writeFile.write(buf);
     }
 
-    testInfo(QString("Write data hash: ")+ writeHash.result().toHex());
+    testInfo(QString("Write data hash: ") + writeHash.result().toHex());
     writeFile.close();
 
-    if (!readFile.open(QIODevice::ReadOnly)) {
+
+    testDebug("Flushing disk caches");
+    QFile caches("/proc/sys/vm/drop_caches");
+    caches.open(QIODevice::WriteOnly);
+    if(caches.isOpen())
+    {
+        caches.putChar('3');
+        caches.close();
+    }
+    else {
+        testError("Unable to flush disk caches");
+        return;
+    }
+
+
+    testDebug("Reading data back from disk");
+    int readFd = open(path.toUtf8(), O_RDONLY);
+    if (readFd == -1) {
+        testError(QString("Error opening read fd"));
+        return;
+    }
+
+    if (!readFile.open(readFd, QIODevice::ReadOnly, QFileDevice::AutoCloseHandle)) {
         testError(QString("Unable to open disk for reading: %1").arg(readFile.errorString()));
         return;
     }
