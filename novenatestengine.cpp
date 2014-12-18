@@ -12,9 +12,12 @@
 
 /* Available Tests */
 #include "acceltest.h"
+#include "actest.h"
 #include "audiotest.h"
+#include "batterychargetest.h"
 #include "buttontest.h"
 #include "capacitytest.h"
+#include "copymmctosatatest.h"
 #include "delayedtextprinttest.h"
 #include "destructivedisktest.h"
 #include "eepromtest.h"
@@ -26,12 +29,13 @@
 #include "netperftest.h"
 #include "packageinstaller.h"
 #include "programsenoko.h"
+#include "senokoscript.h"
 #include "stmpetest.h"
 #include "timertest.h"
 #include "usbtest.h"
 #include "waitfornetwork.h"
 
-#define NOVENA_DESKTOP
+#define NOVENA_LAPTOP
 
 class NovenaTest;
 class NovenaTestEngineThread : public QThread {
@@ -126,11 +130,9 @@ out:
 }
 
 bool NovenaTestEngine::loadAllTests() {
-    tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
+    tests.append(new DelayedTextPrintTest("Starting tests...", 1));
     tests.append(new TimerTestStart());
 #if defined(NOVENA_BAREBOARD)
-    tests.append(new DelayedTextPrintTest(QString("Starting tests..."), 1));
-    tests.append(new TimerTestStart());
     tests.append(new STMPETest());
     tests.append(new GPBBTest());
     tests.append(new MMCTestStart("/factory/novena-mmc-disk.img",
@@ -146,24 +148,84 @@ bool NovenaTestEngine::loadAllTests() {
     tests.append(new MMCTestFinish());
     tests.append(new HWClockTestFinish());
     tests.append(new EEPROMFinish("http://bunniefoo.com:8674/assign/by-serial/%1/"));
+    tests.append(new AudioTest());
 #elif defined(NOVENA_DESKTOP)
+    tests.append(new ProgramSenoko("/factory/senoko.hex"));
+    tests.append(new ButtonTest(ButtonTest::PowerButton | ButtonTest::LidSwitch | ButtonTest::CustomButton));
     tests.append(new CapacityTest(CapacityTest::InternalDevice, 12 * 1024 * 1024, -1));
     tests.append(new EEPROMUpdate("es8328,pcie,gbit,hdmi,eepromoops,senoko,edp"));
     tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.3:1.0-scsi-0:0:0:0", "Internal"));
     tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.2:1.0-scsi-0:0:0:0", "External"));
-    tests.append(new ProgramSenoko("/factory/senoko.hex"));
-    tests.append(new ButtonTest(ButtonTest::PowerButton | ButtonTest::LidSwitch | ButtonTest::CustomButton));
-    tests.append(new PackageInstaller("/factory/",
+    tests.append(new PackageInstaller(MMCCopyThread::getInternalBlockName(), "/factory/",
                                       QStringList()
                                       << "xorg-novena_1.3-r2_all.deb"
                                       << "linux-image-novena_3.17-novena-rc3_armhf.deb"
                                       << "linux-headers-novena_3.17-novena-rc3_armhf.deb"
                                       << "u-boot-novena_2014.10-novena-rc14_armhf.deb"));
+    tests.append(new AudioTest());
+#elif defined(NOVENA_LAPTOP)
+    tests.append(new CapacityTest(CapacityTest::InternalDevice, 2 * 1024 * 1024, 8 * 1024 * 1014));
+    tests.append(new ProgramSenoko("/factory/senoko.hex"));
+    tests.append(new DelayedTextPrintTest("Waiting for Senoko to initialize...", 10));
+    tests.append(new SenokoScript(QStringList()
+                << "chg"                    /* Check for charger manufacturer ID */
+                    << "Manufacturer ID:  0x0040"
+                << "chg"                    /* Check for charger device ID */
+                    << "Device ID:        0x0007"
+                << "stats"                  /* Check for gas gauge product ID */
+                    << "Part name:          bq20z95"
+                << "gg capacity 3 5000"     /* Set a 5 Ah capacity */
+                    << "Setting capacity... Set capacity of 3 cells to 5000 mAh"
+                << "gg cells 3"             /* Batteries have three cells */
+                    << "Set 3-cell mode"
+                << "gg current 5000"        /* Fastcharge current at 5Ah */
+                    << "Setting fastcharge curent... Set fastcharge current to 5000 mA"
+                << "gg tempsource greater"  /* Use TS1 or TS2 */
+                    << "Set tempsource to greater"
+                << "gg deadband 8"          /* Set the 0 mV deadband to +/- mA */
+                    << "Ok"
+                << "gg it"                  /* Start ImpedenceTrack */
+                    << "Starting ImpedenceTrackTM algorithm... Ok"
+                ));
+    tests.append(new BatteryChargeTestStart());
+    tests.append(new SenokoScript(QStringList()
+                 << "chg pause"              /* Stop the charger thread */
+                     << "Pausing charging"
+                 << "chg set 0 0"            /* Don't charge the battery at all */
+                     << "Setting charger: 0mA @ 0mV... Ok"
+                 ));
+    tests.append(new ButtonTest(ButtonTest::PowerButton | ButtonTest::LidSwitch | ButtonTest::CustomButton));
+    tests.append(new ACTest(ACTest::UnPlug));
+    tests.append(new SenokoScript(QStringList()
+                 << "chg resume"              /* Resume the charger thread, for when the battery is reconnected */
+                     << "Resuming charging"
+                 << "chg set 1000 12600 3400" /* Set AC input current */
+                     << "Setting charger: 1000mA @ 12600mV (input: 3400mA)... Ok"
+                 ));
+    tests.append(new EEPROMUpdate("es8328,pcie,gbit,hdmi,eepromoops,senoko,edp,sataroot"));
+    tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.3:1.0-scsi-0:0:0:0", "Internal"));
+    tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.2:1.0-scsi-0:0:0:0", "External"));
+    tests.append(new PackageInstaller(MMCCopyThread::getInternalBlockName(), "/factory/",
+                                      QStringList()
+                                      << "xorg-novena_1.3-r2_all.deb"
+                                      << "linux-image-novena_3.17-novena-rc3_armhf.deb"
+                                      << "linux-headers-novena_3.17-novena-rc3_armhf.deb"
+                                      << "u-boot-novena_2014.10-novena-rc14_armhf.deb"));
+    tests.append(new CopyMMCToSataTest(MMCCopyThread::getInternalBlockName(), MMCCopyThread::getSataBlockName()));
+    tests.append(new BatteryChargeTestCondition());
+    tests.append(new AudioTest());
+    tests.append(new ACTest(ACTest::PlugIn));
+    tests.append(new BatteryChargeTestFinish());
+    tests.append(new SenokoScript(QStringList()
+                 << "chg pause"              /* Stop the charger thread, in case the laptop sits for a while after test has completed */
+                     << "Pausing charging"
+                 << "chg set 0 0"            /* Don't charge the battery at all */
+                     << "Setting charger: 0mA @ 0mV... Ok"
+                 ));
 #else
-#error "No board type defined!  Must be: NOVENA_BAREBOARD or NOVENA_DESKTOP"
+#error "No board type defined!  Must be: NOVENA_BAREBOARD, NOVENA_DESKTOP, or NOVENA_LAPTOP"
 #endif
     tests.append(new TimerTestStop());
-    tests.append(new AudioTest());
     tests.append(new DelayedTextPrintTest(QString("Done!"), 0));
 
     /* Wire up all signals and slots */
