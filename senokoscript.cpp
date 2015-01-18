@@ -98,7 +98,7 @@ void SenokoScript::runTest()
     tcdrain(serial.handle());
 
     testDebug("Looking for Senoko...");
-    testInfo(QString("Found Senoko: ").append(runCommand("reboot")));
+    testInfo(QString("Found Senoko: ").append(runCommand(" ")));
 
     for (int i = 0; i < commands.count(); i += 2) {
         const QString cmd = commands.at(i);
