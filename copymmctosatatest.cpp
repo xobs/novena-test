@@ -31,6 +31,10 @@ int CopyMMCToSataTest::resizeMBR(void)
     fdisk.write("3\n"); /* Partition number 3 */
     fdisk.write(" \n"); /* Default starting offset */
     fdisk.write(" \n"); /* Default ending offset */
+    fdisk.write("x\n"); /* Expert mode */
+    fdisk.write("i\n"); /* Change disk ID */
+    fdisk.write("0x4e6f7653\n"); /* NovS */
+    fdisk.write("r\n"); /* Return to main menu */
     fdisk.write("w\n"); /* Write changes to disk */
 
     if (!fdisk.waitForFinished()) {
