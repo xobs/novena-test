@@ -88,7 +88,8 @@ void AudioTest::timerFinished(void)
 
             /* Try a few times to get a new sound to play, one that's not already playing */
             for (int i = 0; i < 5; i++) {
-                QSound *newfx = sounds.at((int)(randd() * sounds.length()));
+                int idx = randd() * sounds.length();
+                QSound *newfx = sounds.at(idx);
                 if (!playing.contains(newfx)) {
                     fx = newfx;
                     break;
