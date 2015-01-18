@@ -430,6 +430,9 @@ void EEPROMUpdate::runTest()
         return;
     }
 
+    dev->data.features = feat;
+    testDebug(QString("New feature code: 0x") + QString::number(dev->data.features, 16));
+
     if (dev->data.features & feature_retina) {
         dev->data.lvds1.frequency = 148500000;
         dev->data.lvds1.hactive = 1920;
