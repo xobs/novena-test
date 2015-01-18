@@ -1,7 +1,9 @@
 #include "senokoscript.h"
+#include <unistd.h>
 
 #define SERIAL_DEVICE "/dev/ttymxc3"
 #define PROMPT "ch> "
+#define SLEEP_INTERVAL 10
 #include <QFile>
 
 #include <termios.h>
@@ -99,6 +101,7 @@ void SenokoScript::runTest()
 
     testDebug("Looking for Senoko...");
     testInfo(QString("Found Senoko: ").append(runCommand(" ")));
+    sleep(SLEEP_INTERVAL);
 
     for (int i = 0; i < commands.count(); i += 2) {
         const QString cmd = commands.at(i);
@@ -107,9 +110,12 @@ void SenokoScript::runTest()
         testInfo(QString("Running command: ").append(cmd));
 
         const QString haystack = runCommand(cmd);
+
+        testDebug(QString("Command output: ").append(haystack));
         if (!haystack.contains(needle)) {
             testError(QString("Error: String %1 not found in output '%2'").arg(needle).arg(haystack));
             return;
         }
+        sleep(SLEEP_INTERVAL);
     }
 }
