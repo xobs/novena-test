@@ -247,7 +247,8 @@ void NovenaTestWindow::startTests()
 void NovenaTestWindow::setStatusText(QString message)
 {
     ui->statusLabel->setText(message);
-    return;
+    QScrollBar *vert = ui->testLog->verticalScrollBar();
+    vert->setValue(vert->maximum());
 }
 
 void NovenaTestWindow::setProgressBar(double progress)
@@ -259,12 +260,16 @@ void NovenaTestWindow::setProgressBar(double progress)
 void NovenaTestWindow::setProgressText(QString &message)
 {
     ui->progressLabel->setText(message);
+    QScrollBar *vert = ui->testLog->verticalScrollBar();
+    vert->setValue(vert->maximum());
 }
 
 void NovenaTestWindow::setErrorString(QString &message)
 {
     errorString = message;
     ui->errorLabel->setText(errorString);
+    QScrollBar *vert = ui->testLog->verticalScrollBar();
+    vert->setValue(vert->maximum());
 }
 
 void NovenaTestWindow::finishTests(bool successful)
