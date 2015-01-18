@@ -309,9 +309,7 @@ void NovenaTestWindow::finishTests(bool successful)
 void NovenaTestWindow::addTestLog(QString &message)
 {
     QScrollBar *vert = ui->testLog->verticalScrollBar();
-    bool shouldScroll = false;
-    if (vert->value() == vert->maximum())
-        shouldScroll = true;
+    bool shouldScroll = true;
 
     ui->testLog->appendHtml(message);
 
