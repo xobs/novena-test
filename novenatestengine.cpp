@@ -278,7 +278,6 @@ void NovenaTestEngine::updateTestState(const QString name, int level, int value,
     str.append("</font>");
     str.append(": ");
     str.append(message);
-    ui->addTestLog(str);
 
     if (level == TEST_INFO)
         qDebug() << name << "INFO:" << value << message;
@@ -293,6 +292,7 @@ void NovenaTestEngine::updateTestState(const QString name, int level, int value,
         qDebug() << name << "DEBUG:" << value << message;
     else
         qDebug() << name << "????:" << level << value << message;
+    ui->addTestLog(str);
 }
 
 void NovenaTestEngine::cleanupCurrentTest() {
