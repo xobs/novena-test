@@ -12,11 +12,32 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <linux/i2c-dev.h>
 #include <ctype.h>
 
 #define SENOKO_I2C_FILE "/dev/i2c-0"
 #define SENOKO_I2C_ADDR 0x20
+
+bool ButtonTest::canRead(int fd)
+{
+    struct timeval tv;
+    fd_set rfd;
+    int ret;
+
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+
+    FD_ZERO(&rfd);
+    FD_SET(fd, &rfd);
+
+    ret = select(fd + 1, &rfd, NULL, NULL, &tv);
+    if (ret > 0)
+        return true;
+    if (ret < 0)
+        testError(QString("Unable to select: ").append(strerror(errno)));
+    return false;
+}
 
 QFile *ButtonTest::openByName(const QString &name)
 {
@@ -27,7 +48,7 @@ QFile *ButtonTest::openByName(const QString &name)
     inputDir.setFilter(QDir::Files | QDir::Readable | QDir::System);
     foreach (QFileInfo fileInfo, inputDir.entryInfoList()) {
         QFile *inputFile = new QFile(fileInfo.absoluteFilePath());
-        if (!inputFile->open(QIODevice::ReadOnly)) {
+        if (!inputFile->open(QIODevice::ReadOnly | QIODevice::Unbuffered)) {
             testDebug(QString("Couldn't open %1: %2").arg(inputFile->fileName()).arg(inputFile->errorString()));
             delete inputFile;
             continue;
@@ -36,9 +57,9 @@ QFile *ButtonTest::openByName(const QString &name)
         ioctl(inputFile->handle(), EVIOCGNAME(sizeof(devName)), devName);
         if (name == devName) {
             testDebug(QString("Found %1").arg((const char*)devName));
-            int flags = fcntl(inputFile->handle(), F_GETFL);
-            flags |= O_NONBLOCK;
-            fcntl(inputFile->handle(), F_SETFL, flags);
+//            int flags = fcntl(inputFile->handle(), F_GETFL);
+//            flags |= O_NONBLOCK;
+//            fcntl(inputFile->handle(), F_SETFL, flags);
             return inputFile;
         }
         inputFile->close();
@@ -134,9 +155,9 @@ void ButtonTest::runTest()
     while (buttonMask) {
         loops++;
 
-        if ((buttonMask & PowerButton) && powerButton) {
+        if ((buttonMask & PowerButton) && powerButton && canRead(powerButton->handle())) {
             memset((void *)&evt, 0, sizeof(evt));
-            int ret = read(powerButton->handle(), (char *)&evt, sizeof(evt));
+            int ret = powerButton->read((char *)&evt, sizeof(evt));
             if (ret == sizeof(evt)) {
                 if ((evt.type == EV_KEY) && (evt.code == KEY_POWER)) {
                     testInfo("Got Power key (evdev)");
@@ -165,9 +186,9 @@ void ButtonTest::runTest()
             }
         }
 
-        if ((buttonMask & LidSwitch) && lidSwitch) {
+        if ((buttonMask & LidSwitch) && lidSwitch && canRead(lidSwitch->handle())) {
             memset((void *)&evt, 0, sizeof(evt));
-            int ret = read(lidSwitch->handle(), (char *)&evt, sizeof(evt));
+            int ret = lidSwitch->read((char *)&evt, sizeof(evt));
             if (ret == sizeof(evt)) {
                 if ((evt.type == EV_SW) && (evt.code == SW_LID)) {
                     testInfo("Got Lid switch");
@@ -178,13 +199,16 @@ void ButtonTest::runTest()
             }
         }
 
-        if ((buttonMask & CustomButton) && customButton) {
-            memset((void *)&evt, 0, sizeof(evt));
-            int ret = read(customButton->handle(), (char *)&evt, sizeof(evt));
+        if ((buttonMask & CustomButton) && customButton && canRead(customButton->handle())) {
+                memset((void *)&evt, 0, sizeof(evt));
+            int ret = customButton->read((char *)&evt, sizeof(evt));
             if (ret == sizeof(evt)) {
                 if ((evt.type == EV_KEY) && (evt.code == KEY_CONFIG)) {
                     testInfo("Got Custom key");
                     buttonMask &= ~CustomButton;
+                }
+                else if ((evt.type = EV_MSC) && (evt.code == MSC_SCAN)) {
+                    testInfo("Got scan event, Custom key should be coming up...");
                 }
                 else
                     testInfo(QString("Got unknown key from KPP: Type: %1  Code: %2").arg(QString::number(evt.type, 16)).arg(QString::number(evt.code, 16)));

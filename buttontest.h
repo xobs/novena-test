@@ -20,6 +20,7 @@ public:
 private:
     QFile *openByName(const QString &name);
     int getSenokoRegister(int reg);
+    bool canRead(int fd);
     int senoko_fd;
     int buttonMask;
 };
