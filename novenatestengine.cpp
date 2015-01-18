@@ -177,10 +177,10 @@ bool NovenaTestEngine::loadAllTests() {
                     << "Device ID:        0x0007"
                 << "stats"                  /* Check for gas gauge product ID */
                     << "Part name:          bq20z95"
-                << "gg capacity 3 5000"     /* Set a 5 Ah capacity */
-                    << "Setting capacity... Set capacity of 3 cells to 5000 mAh"
                 << "gg cells 3"             /* Batteries have three cells */
                     << "Set 3-cell mode"
+                << "gg capacity 3 5000"     /* Set a 5 Ah capacity */
+                    << "Setting capacity... Set capacity of 3 cells to 5000 mAh"
                 << "gg current 5000"        /* Fastcharge current at 5Ah */
                     << "Setting fastcharge curent... Set fastcharge current to 5000 mA"
                 << "gg tempsource greater"  /* Use TS1 or TS2 */
@@ -201,7 +201,9 @@ bool NovenaTestEngine::loadAllTests() {
                                       << "xorg-novena_1.3-r2_all.deb"
                                       << "linux-image-novena_3.17-novena-rc3_armhf.deb"
                                       << "linux-headers-novena_3.17-novena-rc3_armhf.deb"
-                                      << "u-boot-novena_2014.10-novena-rc14_armhf.deb"));
+                                      << "u-boot-novena_2014.10-novena-rc14_armhf.deb"
+                                      << "pulseaudio-novena_1.1-r1_all.deb"
+                                      << "novena-usb-hub_1.1-r1_armhf.deb"));
     tests.append(new CopyMMCToSataTest(MMCCopyThread::getInternalBlockName(), MMCCopyThread::getSataBlockName()));
     tests.append(new SenokoScript(QStringList()
                  << "chg pause"              /* Stop the charger thread */
