@@ -1,5 +1,8 @@
 #include "batterychargetest.h"
+#include "timertest.h"
+
 #include <QFile>
+#include <QTime>
 
 #include <errno.h>
 #include <linux/input.h>
@@ -26,13 +29,16 @@
 #define TEMP_KELVIN_TO_CELSIUS 2731
 
 /* When charging, the current should be at least this much */
-#define CHARGE_CURRENT_MIN_MA 800
+#define CHARGE_CURRENT_MIN_MA 100
 
 /* This is the voltage at which the battery is "conditioned" */
 #define BATTERY_FINISHED_MV 11600
 
 /* If the battery gets here, it's gone too far and is no longer considered "good" */
 #define BATTERY_ABORT_MV 10500
+
+/* How often to print test state */
+#define REPORT_INTERVAL_SECONDS 10
 
 static int senoko_fd;
 static int gg_fd;
@@ -59,40 +65,6 @@ static int senokoShutdown(void)
         ;
 
     return 0;
-}
-
-static int getSenokoRegisterReal(int reg)
-{
-    struct i2c_rdwr_ioctl_data session;
-    struct i2c_msg messages[2];
-    char set_addr_buf[1];
-    qint8 data[1];
-
-    if (senoko_fd <= 0)
-        senoko_fd = open(SENOKO_I2C_FILE, O_RDWR);
-
-    memset(set_addr_buf, 0, sizeof(set_addr_buf));
-    memset(data, 0, sizeof(data));
-
-    set_addr_buf[0] = reg;
-
-    messages[0].addr = SENOKO_I2C_ADDR;
-    messages[0].flags = 0;
-    messages[0].len = sizeof(set_addr_buf);
-    messages[0].buf = set_addr_buf;
-
-    messages[1].addr = SENOKO_I2C_ADDR;
-    messages[1].flags = I2C_M_RD;
-    messages[1].len = sizeof(data);
-    messages[1].buf = (char *)data;
-
-    session.msgs = messages;
-    session.nmsgs = 2;
-
-    if(ioctl(senoko_fd, I2C_RDWR, &session) < 0)
-        return -1;
-
-    return ((int)data[0] & 0xff);
 }
 
 static int getGasGaugeDataReal(int reg, void *data, quint32 len)
@@ -128,26 +100,6 @@ static int getGasGaugeDataReal(int reg, void *data, quint32 len)
     return 0;
 }
 
-static int getSenokoRegister(int reg)
-{
-    int tries;
-    bool success;
-    int ret = 0;
-
-    success = false;
-    for (tries = 0; !success && (tries < MAX_TRIES); tries++) {
-        ret = getSenokoRegisterReal(reg);
-
-        if (ret < 0)
-            sleep(1);
-        else
-            success = true;
-    }
-    if (!success)
-        return -1;
-    return ret;
-}
-
 static int getGasGaugeData(int reg, void *data, quint32 len)
 {
     int tries;
@@ -176,7 +128,7 @@ void BatteryChargeMonitor::run(void)
         quint16 voltage;
 
         if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage)))
-            senokoShutdown();
+            continue;
 
         if (voltage < BATTERY_ABORT_MV)
             senokoShutdown();
@@ -281,63 +233,14 @@ void BatteryChargeTestStart::runTest()
     chargeMonitor->start();
 }
 
-BatteryChargeTestCondition::BatteryChargeTestCondition(void)
+BatteryChargeTestRate::BatteryChargeTestRate(void)
 {
-    name = "Battery Charge Test (Conditioning)";
+    name = "Battery Charge Test Rate";
     senoko_fd = 0;
 }
 
-void BatteryChargeTestCondition::runTest()
+void BatteryChargeTestRate::runTest()
 {
-    quint16 voltage;
-
-    testInfo(QString("Waiting for battery voltage to drop below %1 mV").arg(QString::number(BATTERY_FINISHED_MV)));
-    /* Wait for the votlage to drop below conditioning value */
-    do {
-        sleep(1);
-        if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
-            testError("Unable to communicate with gas gauge");
-            return;
-        }
-    } while (voltage > BATTERY_FINISHED_MV);
-
-    if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
-        testError("Unable to communicate with gas gauge");
-        return;
-    }
-    if (voltage < BATTERY_ABORT_MV) {
-        testError(QString("Battery voltage is too low.  Wanted: %1 mV, got %2 mV").arg(QString::number(BATTERY_ABORT_MV)).arg(QString::number(voltage)));
-        senokoShutdown();
-        return;
-    }
-
-    /* We're conditioned now, so turn down the backlight to save power */
-    QFile backlight("/sys/class/backlight/backlight/brightness");
-    backlight.open(QIODevice::WriteOnly);
-    if (!backlight.isOpen()) {
-        testError("Couldn't open backlight file");
-        return;
-    }
-
-    backlight.write("4");
-    backlight.close();
-
-    testInfo("Battery conditioned");
-}
-
-BatteryChargeTestFinish::BatteryChargeTestFinish(void)
-{
-    name = "Battery Charge Test (Finish)";
-    senoko_fd = 0;
-}
-
-void BatteryChargeTestFinish::runTest()
-{
-    QFile backlight("/sys/class/backlight/backlight/brightness");
-    backlight.open(QIODevice::WriteOnly);
-    backlight.write("12");
-    backlight.close();
-
     /* Verify there is current flowing (the charger should be enabled already) */
     sleep(10);
 
@@ -354,4 +257,60 @@ void BatteryChargeTestFinish::runTest()
     testInfo(QString("Charger was observed to be driving %1 mA (threshold: %2 mA)").arg(QString::number(current)).arg(QString::number(CHARGE_CURRENT_MIN_MA)));
 
     testInfo("Battery test passed");
+}
+
+BatteryChargeTestCondition::BatteryChargeTestCondition(void)
+{
+    name = "Battery Charge Test (Conditioning)";
+    senoko_fd = 0;
+}
+
+void BatteryChargeTestCondition::runTest()
+{
+    quint16 voltage;
+    qint16 current;
+    int seconds_counter = 0;
+
+    testInfo(QString("Waiting for battery voltage to drop below %1 mV").arg(QString::number(BATTERY_FINISHED_MV)));
+    /* Wait for the votlage to drop below conditioning value */
+    do {
+        sleep(1);
+        seconds_counter++;
+
+        if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
+            testError("Unable to communicate with gas gauge");
+            return;
+        }
+
+        if (getGasGaugeData(0x0a, (void *)&current, sizeof(current))) {
+            testError("Unable to get current level");
+            return;
+        }
+
+        if (!(seconds_counter % REPORT_INTERVAL_SECONDS)) {
+            QTime elapsed;
+            elapsed.addMSecs(testElapsedMs());
+
+            testInfo(QString("Test duration: %1  Voltage: %2 mV  Current: %3 mA")
+                     .arg(elapsed.toString("H:mm:ss"))
+                     .arg(QString::number(voltage))
+                     .arg(QString::number(current)));
+        }
+    } while (voltage > BATTERY_FINISHED_MV);
+
+    if (getGasGaugeData(0x09, (void *)&voltage, sizeof(voltage))) {
+        testError("Unable to communicate with gas gauge");
+        return;
+    }
+    if (voltage < BATTERY_ABORT_MV) {
+        testError(QString("Battery voltage is too low.  Wanted: %1 mV, got %2 mV").arg(QString::number(BATTERY_ABORT_MV)).arg(QString::number(voltage)));
+        senokoShutdown();
+        return;
+    }
+
+    testInfo("Battery conditioned");
+    sync();
+    sleep(10);
+    while (1)
+        senokoShutdown();
 }

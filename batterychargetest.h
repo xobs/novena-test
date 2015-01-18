@@ -25,6 +25,13 @@ private:
     BatteryChargeMonitor *chargeMonitor;
 };
 
+class BatteryChargeTestRate : public NovenaTest
+{
+public:
+    BatteryChargeTestRate(void);
+    void runTest();
+};
+
 class BatteryChargeTestCondition : public NovenaTest
 {
 public:
@@ -32,10 +39,4 @@ public:
     void runTest();
 };
 
-class BatteryChargeTestFinish : public NovenaTest
-{
-public:
-    BatteryChargeTestFinish(void);
-    void runTest();
-};
 #endif // BATTERYCHARGETEST_H
