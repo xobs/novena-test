@@ -409,7 +409,6 @@ EEPROMUpdate::EEPROMUpdate(QString features)
 void EEPROMUpdate::runTest()
 {
     int ret;
-    int feat;
 
     testInfo("Trying to open I2C");
     dev = eeprom_open(I2C_BUS, EEPROM_ADDRESS);
@@ -424,8 +423,8 @@ void EEPROMUpdate::runTest()
         return;
     }
 
-    feat = parse_features(_features.toUtf8());
-    if (feat == -1) {
+    dev->data.features = parse_features(_features.toUtf8());
+    if (dev->data.features == -1) {
         testError("Invalid feature string");
         return;
     }
