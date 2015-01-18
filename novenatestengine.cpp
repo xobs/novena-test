@@ -185,7 +185,7 @@ bool NovenaTestEngine::loadAllTests() {
                     << "Setting fastcharge curent... Set fastcharge current to 5000 mA"
                 << "gg tempsource greater"  /* Use TS1 or TS2 */
                     << "Set tempsource to greater"
-                << "gg deadband 8"          /* Set the 0 mV deadband to +/- mA */
+                << "gg deadband 16"          /* Set the 0 mV deadband to +/- 16 mA */
                     << "Ok"
                 << "gg it"                  /* Start ImpedenceTrack */
                     << "Starting ImpedenceTrackTM algorithm... Ok"
