@@ -4,6 +4,8 @@
 #include <QFile>
 #include "novenatest.h"
 
+int testElapsedMs(void);
+
 class TimerTestStart : public NovenaTest
 {
 public:

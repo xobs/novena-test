@@ -29,3 +29,8 @@ void TimerTestStop::runTest()
     testDebug(QString("Test took %1 ms").arg(timer->elapsed()));
     testInfo("Timer finished");
 }
+
+int testElapsedMs(void)
+{
+    return timer->elapsed();
+}
