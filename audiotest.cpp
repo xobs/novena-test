@@ -6,6 +6,19 @@
 #include <QDebug>
 #include <unistd.h>
 
+static bool endTest;
+
+AudioTestStop::AudioTestStop()
+{
+    name = "Stop audio test";
+}
+
+void AudioTestStop::runTest(void)
+{
+    testInfo("Stopping audio test");
+    endTest = true;
+}
+
 AudioTest::AudioTest() : addSoundsTimer(this)
 {
     name = "Audio";
@@ -27,8 +40,10 @@ AudioTest::AudioTest() : addSoundsTimer(this)
 void AudioTest::runTest()
 {
     testInfo("Producing pleasant audio sounds");
+    endTest = false;
 
     /* Hacks */
+    system("cat /factory/sounds/* > /dev/null");
     system("amixer -c 1 set 'Right Mixer Right Bypass' unmute");
     system("amixer -c 1 set 'Left Mixer Left Bypass' unmute");
     system("amixer -c 1 set 'Output 1' 100%"); /* Headphone port 100% */
@@ -58,6 +73,9 @@ void AudioTest::timerFinished(void)
         }
     }
 
+    if (endTest)
+        goto out;
+
     /* Only play a sound when we're below the maximum number of sounds, and
      * about 70% of the time.
      */
@@ -84,5 +102,7 @@ void AudioTest::timerFinished(void)
             }
         }
     }
+
+out:
     mutex.unlock();
 }

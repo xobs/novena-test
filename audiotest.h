@@ -31,4 +31,13 @@ signals:
     void startTimer();
 };
 
+class AudioTestStop : public NovenaTest
+{
+    Q_OBJECT
+
+public:
+    AudioTestStop();
+    void runTest();
+};
+
 #endif // AUDIOTEST_H
