@@ -90,6 +90,7 @@ ACTest::ACTest(enum direction _dir)
 
 void ACTest::runTest()
 {
+    int tries = 0;
     if (dir == PlugIn)
         testInfo("Waiting for AC to be connected");
     else
@@ -110,5 +111,8 @@ void ACTest::runTest()
             testInfo("AC disconnected");
             break;
         }
+        tries++;
+        sleep(1);
     }
+    testDebug(QString("Test took %1 tries").arg(QString::number(tries)));
 }
