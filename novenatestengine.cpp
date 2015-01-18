@@ -164,10 +164,13 @@ bool NovenaTestEngine::loadAllTests() {
                                       << "u-boot-novena_2014.10-novena-rc14_armhf.deb"));
     tests.append(new AudioTest());
 #elif defined(NOVENA_LAPTOP)
+    tests.append(new WaitForNetwork(WaitForNetwork::WiFi, true));
     tests.append(new CapacityTest(CapacityTest::InternalDevice, 2 * 1024 * 1024, 8 * 1024 * 1014));
     tests.append(new ProgramSenoko("/factory/senoko.hex"));
     tests.append(new DelayedTextPrintTest("Waiting for Senoko to initialize...", 10));
     tests.append(new SenokoScript(QStringList()
+                << "power on"               /* Ensure board is powered up */
+                    << "Powering on... Ok"
                 << "chg"                    /* Check for charger manufacturer ID */
                     << "Manufacturer ID:  0x0040"
                 << "chg"                    /* Check for charger device ID */
@@ -188,21 +191,9 @@ bool NovenaTestEngine::loadAllTests() {
                     << "Starting ImpedenceTrackTM algorithm... Ok"
                 ));
     tests.append(new BatteryChargeTestStart());
-    tests.append(new SenokoScript(QStringList()
-                 << "chg pause"              /* Stop the charger thread */
-                     << "Pausing charging"
-                 << "chg set 0 0"            /* Don't charge the battery at all */
-                     << "Setting charger: 0mA @ 0mV... Ok"
-                 ));
+    tests.append(new DelayedTextPrintTest("Waiting for charger to begin...", 10));
+    tests.append(new BatteryChargeTestRate());
     tests.append(new ButtonTest(ButtonTest::PowerButton | ButtonTest::LidSwitch | ButtonTest::CustomButton));
-    tests.append(new ACTest(ACTest::UnPlug));
-    tests.append(new SenokoScript(QStringList()
-                 << "chg resume"              /* Resume the charger thread, for when the battery is reconnected */
-                     << "Resuming charging"
-                 << "chg set 1000 12600 3400" /* Set AC input current */
-                     << "Setting charger: 1000mA @ 12600mV (input: 3400mA)... Ok"
-                 ));
-    tests.append(new EEPROMUpdate("es8328,pcie,gbit,hdmi,eepromoops,senoko,edp,sataroot"));
     tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.3:1.0-scsi-0:0:0:0", "Internal"));
     tests.append(new DestructiveDiskTest(1024 * 1024 * 32, "/dev/disk/by-path/platform-ci_hdrc.1-usb-0:1.4.2:1.0-scsi-0:0:0:0", "External"));
     tests.append(new PackageInstaller(MMCCopyThread::getInternalBlockName(), "/factory/",
@@ -212,16 +203,24 @@ bool NovenaTestEngine::loadAllTests() {
                                       << "linux-headers-novena_3.17-novena-rc3_armhf.deb"
                                       << "u-boot-novena_2014.10-novena-rc14_armhf.deb"));
     tests.append(new CopyMMCToSataTest(MMCCopyThread::getInternalBlockName(), MMCCopyThread::getSataBlockName()));
-    tests.append(new BatteryChargeTestCondition());
-    tests.append(new AudioTest());
-    tests.append(new ACTest(ACTest::PlugIn));
-    tests.append(new BatteryChargeTestFinish());
     tests.append(new SenokoScript(QStringList()
-                 << "chg pause"              /* Stop the charger thread, in case the laptop sits for a while after test has completed */
+                 << "chg pause"              /* Stop the charger thread */
                      << "Pausing charging"
                  << "chg set 0 0"            /* Don't charge the battery at all */
                      << "Setting charger: 0mA @ 0mV... Ok"
                  ));
+    tests.append(new EEPROMUpdate("es8328,pcie,gbit,hdmi,eepromoops,senoko,edp,sataroot"));
+    tests.append(new AudioTest());
+    tests.append(new ACTest(ACTest::UnPlug));
+    tests.append(new AudioTestStop());
+    tests.append(new SenokoScript(QStringList()
+                 << "chg resume"              /* Resume the charger thread, for when the battery is reconnected */
+                     << "Resuming charging"
+                 << "chg set 1000 12600 3400" /* Set AC input current */
+                     << "Setting charger: 1000mA @ 12600mV (input: 3400mA)... Ok"
+                 ));
+    tests.append(new BatteryChargeTestCondition());
+    /* Board will be powered off after this test finishes */
 #else
 #error "No board type defined!  Must be: NOVENA_BAREBOARD, NOVENA_DESKTOP, or NOVENA_LAPTOP"
 #endif
