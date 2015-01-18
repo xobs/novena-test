@@ -42,10 +42,11 @@ const QString WaitForNetwork::getInterfaceName(enum interface iface)
 
 
 
-WaitForNetwork::WaitForNetwork(enum interface iface)
+WaitForNetwork::WaitForNetwork(enum interface iface, bool testExists)
 {
     name = "Connect to WiFi";
     _iface = iface;
+    earlyExit = testExists;
 }
 
 void WaitForNetwork::runTest()
@@ -57,6 +58,11 @@ void WaitForNetwork::runTest()
     }
 
     testInfo(QString() + "Waiting for network interface " + interface + " to come up...");
+
+    if (earlyExit) {
+        testInfo("Simply making sure the interface exists, exiting early.");
+        return;
+    }
 
     while (1) {
         foreach(QNetworkInterface netInterface, QNetworkInterface::allInterfaces()) {

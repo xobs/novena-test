@@ -13,12 +13,13 @@ public:
         USB,
     };
 
-    WaitForNetwork(enum interface iface);
+    WaitForNetwork(enum interface iface, bool testExists = false);
     void runTest();
     static const QString getInterfaceName(enum interface iface);
 
 private:
     enum interface _iface;
+    bool earlyExit;
 };
 
 #endif // WAITFORNETWORK_H
