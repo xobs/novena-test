@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QListWidgetItem>
 #include <QFile>
+#include <QTimer>
 #include "novenatestengine.h"
 
 const char SEQUENCE[] = "132231";
@@ -33,6 +34,7 @@ private:
     unsigned int sequencePosition;
     QString serialLabelString;
     QFile logFile;
+    QTimer scrollTimer;
 
     void advanceDebugSequence(const char c);
     void openLogFile();
@@ -48,6 +50,8 @@ public slots:
 
     void moveToDebugScreen();
     void moveToMainScreen();
+
+    void scrollView();
 };
 
 #endif // NOVENATESTWINDOW_H

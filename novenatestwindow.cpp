@@ -11,7 +11,8 @@
 
 NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::NovenaTestWindow)
+    ui(new Ui::NovenaTestWindow),
+    scrollTimer(parent)
 {
 
     ui->setupUi(this);
@@ -50,6 +51,9 @@ NovenaTestWindow::NovenaTestWindow(QWidget *parent) :
 
     connect(ui->testSelectionButton, SIGNAL(clicked()),
             this, SLOT(moveToDebugScreen()));
+
+    // Work around a bug where the scroll view doesn't scroll all the way
+    connect(&scrollTimer, SIGNAL(timeout()), this, SLOT(scrollView()));
 
     // Start the secret debug code at stage 0
     sequencePosition = 0;
@@ -249,12 +253,13 @@ void NovenaTestWindow::setStatusText(QString message)
     ui->statusLabel->setText(message);
     QScrollBar *vert = ui->testLog->verticalScrollBar();
     vert->setValue(vert->maximum());
+    scrollTimer.start(300);
 }
 
 void NovenaTestWindow::setProgressBar(double progress)
 {
     ui->progressBar->setValue(progress*100);
-    return;
+    scrollTimer.start(300);
 }
 
 void NovenaTestWindow::setProgressText(QString &message)
@@ -262,12 +267,20 @@ void NovenaTestWindow::setProgressText(QString &message)
     ui->progressLabel->setText(message);
     QScrollBar *vert = ui->testLog->verticalScrollBar();
     vert->setValue(vert->maximum());
+    scrollTimer.start(300);
 }
 
 void NovenaTestWindow::setErrorString(QString &message)
 {
     errorString = message;
     ui->errorLabel->setText(errorString);
+    QScrollBar *vert = ui->testLog->verticalScrollBar();
+    vert->setValue(vert->maximum());
+    scrollTimer.start(300);
+}
+
+void NovenaTestWindow::scrollView(void)
+{
     QScrollBar *vert = ui->testLog->verticalScrollBar();
     vert->setValue(vert->maximum());
 }
